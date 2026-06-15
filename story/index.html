@@ -178,6 +178,27 @@
       letter-spacing: 0;
     }
 
+    /* Entrance: the face box fades in first, then the bubble unrolls to the right
+       and the text fades in — added in setInstruction only on a fresh appear. */
+    #instruction.intro-reveal img {
+      animation: instrUnroll .6s cubic-bezier(.22, 1, .36, 1) both;
+    }
+
+    #instruction.intro-reveal #instructionText {
+      animation: instrTextIn .5s ease .3s both;
+    }
+
+    @keyframes instrUnroll {
+      0% { clip-path: inset(0 88% 0 0); }
+      32% { clip-path: inset(0 88% 0 0); }   /* hold on the face box only (left ~12%) */
+      100% { clip-path: inset(0 0 0 0); }
+    }
+
+    @keyframes instrTextIn {
+      from { opacity: 0; transform: translateX(-8px); }
+      to { opacity: 1; transform: translateX(0); }
+    }
+
     #scene {
       position: absolute;
       inset: 0;
@@ -189,6 +210,10 @@
       width: 260px;
       height: 520px;
       transform-origin: bottom center;
+      /* Above #podConnectors (z4): the celebrate-jump transform makes each slot a
+         stacking context, and without a z-index it would drop BEHIND the connector
+         SVG mid-jump — so the wires/dots would render on top of the bots. */
+      z-index: 6;
     }
 
     .bot-slot::after {
@@ -743,6 +768,17 @@
     #cornerSlots.slots-fit .cs-tl,
     #cornerSlots.slots-fit .cs-tr {
       top: 186px;   /* panel bottom ≈158 → ~28px gap to the hollow box (clears the seated block too) */
+    }
+
+    /* Circle round: the quarter-disc hollows render ~180px tall (vs the square's
+       113), so at top:186 the seated piece reached down into the success Next
+       button. Raise the upper pair for this round only — the seated pieces and
+       connectors are computed from the slot centres, so they move up with it and
+       the alignment is unchanged. The (smaller, centred) seated piece still clears
+       the instruction panel. */
+    #cornerSlots.slots-fit.slots-tall .cs-tl,
+    #cornerSlots.slots-fit.slots-tall .cs-tr {
+      top: 140px;
     }
 
     /* Diamond round (triangle2, Figma 37:2681): the four hollows are bigger and
@@ -2411,10 +2447,10 @@
       position: absolute;
       right: 56px;
       bottom: 68px;
-      width: 290px;
-      height: 76px;
+      width: 190px;
+      height: auto;
       border: none;
-      border-radius: 38px;
+      border-radius: 0;
       opacity: 0;
       transform: scale(0.85) translateY(16px);
       transition:
@@ -2427,9 +2463,12 @@
       z-index: 6;
       overflow: visible;
       transform-origin: 50% 50%;
-      background: linear-gradient(175deg, #ffe55a 0%, #f5a623 38%, #e07400 100%);
-      box-shadow: inset 0 3px 0 rgba(255,255,255,0.38), 0 5px 0 rgba(150,60,0,0.45), 0 8px 18px rgba(220,100,0,0.35);
-      filter: drop-shadow(0 8px 14px rgba(120, 60, 0, .38));
+      /* The button IS the Button.webp art (gloss + shadow + play glyph baked in),
+         so the old gold-pill background/box-shadow/sheen are dropped. */
+      background: none;
+      box-shadow: none;
+      filter: none;
+      padding: 0;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -2453,16 +2492,10 @@
       display: none;
     }
 
+    /* Sheen highlight removed — the Button.webp art already carries its gloss. */
     #playButton::after {
       content: "";
-      position: absolute;
-      inset: 20% 10% 18% 8%;
-      border-radius: 50%;
-      background: radial-gradient(ellipse, rgba(255, 255, 255, .52) 0 10%, transparent 58%);
-      opacity: .52;
-      transform: scale(.9);
-      pointer-events: none;
-      z-index: 2;
+      display: none;
     }
 
     #playButton img {
@@ -2475,34 +2508,22 @@
     }
 
     #playStage.start-mode #playButton {
-      left: 477px;
+      left: 517px;   /* frame-centre: 640 − 0.547·225 (the round glyph sits at 0.547 of the padded art's width) */
       right: auto;
-      top: 478px;
+      top: 432px;
       bottom: auto;
-      width: 349px;
-      height: 92px;
-      /* Glossy gold pill: top sheen over the gold body with a soft depth shadow.
-         (Glow halo + bright rim removed.) */
-      background:
-        linear-gradient(180deg, rgba(255, 255, 255, 0.58) 0%, rgba(255, 255, 255, 0.12) 30%, rgba(255, 255, 255, 0) 48%),
-        linear-gradient(180deg, #ffd24a 0%, #ffb52e 42%, #f5931f 74%, #e98a12 100%);
-      box-shadow:
-        inset 0 5px 3px rgba(255, 255, 255, 0.6),
-        inset 0 -9px 14px rgba(180, 80, 0, 0.40),
-        0 7px 0 rgba(190, 92, 0, 0.5),
-        0 12px 22px rgba(120, 60, 0, 0.32);
-      filter: drop-shadow(0 8px 14px rgba(120, 60, 0, 0.38));
+      width: 225px;
+      height: auto;
     }
 
     #playStage.preplay-mode #playButton {
       left: 700px;            /* right-of-centre, clear of Ira */
       right: auto;
-      top: 350px;
+      top: 285px;             /* glyph centred on the frame mid (640×360 space): 360 − 0.533·145 */
       bottom: auto;
-      width: 264px;
-      height: 96px;
-      border-radius: 48px;
-      filter: drop-shadow(0 8px 14px rgba(40, 70, 110, .38));
+      width: 190px;
+      height: auto;
+      border-radius: 0;
       transform-origin: center center;
     }
 
@@ -2521,7 +2542,7 @@
 
     #playStage.preplay-mode #playButton.play-ready:hover {
       transform: scale(1.1) translateY(-6px);
-      filter: drop-shadow(0 12px 18px rgba(40, 70, 110, .42));
+      filter: drop-shadow(0 0 18px rgba(255, 198, 84, .9)) drop-shadow(0 8px 14px rgba(210, 120, 0, .35));
     }
 
     #playButton.play-ready {
@@ -2532,7 +2553,7 @@
     #playButton.play-ready:hover {
       animation: none;
       transform: scale(1.08) translateY(-6px);
-      filter: drop-shadow(0 14px 18px rgba(120, 60, 0, .4));
+      filter: drop-shadow(0 0 18px rgba(255, 198, 84, .9)) drop-shadow(0 8px 14px rgba(210, 120, 0, .35));
       box-shadow: none;
       transition: transform 0.18s cubic-bezier(.34, 1.5, .64, 1), filter 0.18s ease, box-shadow 0.18s ease;
     }
@@ -2541,7 +2562,7 @@
     #playButton.play-clicked {
       animation: none;
       transform: scale(0.93) translateY(3px);
-      filter: drop-shadow(0 6px 12px rgba(120, 60, 0, .4));
+      filter: drop-shadow(0 0 12px rgba(255, 198, 84, .85));
       box-shadow: none;
       transition: transform 0.07s ease, filter 0.07s ease, box-shadow 0.07s ease;
     }
@@ -3481,82 +3502,57 @@
       height: auto
     }
 
-    /* ── Code-built glossy pink play button (pure HTML+CSS, no image/SVG) ──
-       Layered rounded triangles: white cushion frame → dark-pink inner edge →
-       pink candy gradient fill, with a glossy top-left highlight, a thick
-       rounded ">" chevron, left motion streaks and corner sparkles. Replaces
-       NextButton2.webp; shown only in the success (.is-success) state. */
+    /* ── Code-built glossy ORANGE circular "Next" button (pure HTML+CSS, no image) ──
+       Cream rim (wrapper bg + padding) → orange gradient body (golden top, deep
+       orange bottom) with an upper-left gloss → a bold rounded white right-arrow.
+       Replaces NextButton2.webp; shown only in the success (.is-success) state. */
     #nextButton .next-play { display: none; }
     #nextButton.is-success img { display: none; }
     #nextButton.is-success .next-play { display: block; }
 
     .next-play {
+      --rim: 7%;                 /* cream rim thickness */
       position: relative;
       display: block;
       width: 100%;
       aspect-ratio: 1 / 1;
       margin: 0 auto;
+      box-sizing: border-box;
+      padding: var(--rim);
+      border-radius: 50%;
+      background: linear-gradient(180deg, #fff6e4 0%, #ffe7bd 100%);
+      box-shadow: 0 7px 15px rgba(190, 90, 0, .38), 0 2px 5px rgba(190, 90, 0, .28);
     }
-    .next-play > * { position: absolute; }
-    .np-frame, .np-edge, .np-fill { inset: 0; }
-
-    /* white inflated frame + soft grey shadow around it */
-    .np-frame {
-      clip-path: polygon(16.0% 33.0%, 16.2% 29.9%, 16.7% 27.4%, 17.5% 25.4%, 18.7% 23.9%, 20.2% 22.9%, 22.1% 22.4%, 24.3% 22.5%, 26.8% 23.1%, 29.6% 24.2%, 63.3% 39.6%, 67.8% 41.9%, 71.1% 44.2%, 73.4% 46.5%, 74.5% 48.8%, 74.5% 51.2%, 73.4% 53.5%, 71.1% 55.8%, 67.8% 58.1%, 63.3% 60.4%, 29.6% 75.8%, 26.8% 76.9%, 24.3% 77.5%, 22.1% 77.6%, 20.2% 77.1%, 18.7% 76.1%, 17.5% 74.6%, 16.7% 72.6%, 16.2% 70.1%, 16.0% 67.0%);
-      background: linear-gradient(155deg, #ffffff 0%, #f4f5f8 58%, #e2e5ec 100%);
-      filter: drop-shadow(0 5px 6px rgba(70, 50, 80, .30)) drop-shadow(0 1px 1px rgba(70, 50, 80, .25));
-      z-index: 1;
+    /* orange body: golden top → deep orange bottom, with rim-light + base shadow */
+    .np-body {
+      position: relative;
+      display: block;
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      background: linear-gradient(180deg, #ffd23d 0%, #ffae22 46%, #f4790a 100%);
+      box-shadow: inset 0 -9px 16px rgba(178, 74, 0, .5), inset 0 7px 12px rgba(255, 240, 185, .55);
+      overflow: hidden;
     }
-    /* thin darker-pink ring just inside the white frame */
-    .np-edge {
-      clip-path: polygon(21.0% 40.8%, 21.2% 37.7%, 21.7% 35.2%, 22.5% 33.1%, 23.7% 31.6%, 25.2% 30.7%, 27.1% 30.2%, 29.3% 30.3%, 31.8% 30.9%, 34.6% 32.0%, 51.2% 39.6%, 55.7% 41.9%, 59.1% 44.2%, 61.3% 46.5%, 62.5% 48.8%, 62.5% 51.2%, 61.3% 53.5%, 59.1% 55.8%, 55.7% 58.1%, 51.2% 60.4%, 34.6% 68.0%, 31.8% 69.1%, 29.3% 69.7%, 27.1% 69.8%, 25.2% 69.3%, 23.7% 68.4%, 22.5% 66.9%, 21.7% 64.8%, 21.2% 62.3%, 21.0% 59.2%);
-      background: linear-gradient(150deg, #e85bb0 0%, #c8327f 100%);
-      z-index: 2;
-    }
-    /* candy pink gradient fill */
-    .np-fill {
-      clip-path: polygon(23.0% 43.9%, 23.2% 40.8%, 23.7% 38.3%, 24.5% 36.3%, 25.7% 34.8%, 27.2% 33.8%, 29.1% 33.3%, 31.3% 33.4%, 33.8% 34.0%, 36.6% 35.1%, 48.4% 40.5%, 52.5% 42.6%, 55.6% 44.7%, 57.6% 46.8%, 58.6% 48.9%, 58.6% 51.1%, 57.6% 53.2%, 55.6% 55.3%, 52.5% 57.4%, 48.4% 59.5%, 36.6% 64.9%, 33.8% 66.0%, 31.3% 66.6%, 29.1% 66.7%, 27.2% 66.2%, 25.7% 65.2%, 24.5% 63.7%, 23.7% 61.7%, 23.2% 59.2%, 23.0% 56.1%);
-      background: linear-gradient(150deg, #ff7ccb 0%, #ff4fbd 46%, #ff2aa8 100%);
-      z-index: 3;
-    }
-    /* glossy top-left highlight (clipped to the fill triangle) */
-    .np-fill::before {
+    /* glossy upper-left highlight */
+    .np-body::before {
       content: "";
       position: absolute;
-      left: 27%; top: 38%;
-      width: 26%; height: 13%;
+      left: 12%; top: 7%;
+      width: 64%; height: 44%;
       border-radius: 50%;
-      background: radial-gradient(60% 70% at 50% 40%, rgba(255, 255, 255, .92), rgba(255, 255, 255, 0) 72%);
-      transform: rotate(-14deg);
+      background: radial-gradient(58% 68% at 42% 36%, rgba(255, 255, 255, .92), rgba(255, 255, 255, 0) 70%);
     }
-    /* inner shadow for depth along the lower-right */
-    .np-fill::after {
-      content: "";
+    /* bold rounded white right-arrow (filled + round-joined for soft ends) */
+    .np-arrow {
       position: absolute;
       inset: 0;
-      background: radial-gradient(80% 60% at 58% 70%, rgba(150, 8, 78, .55), rgba(150, 8, 78, 0) 58%);
+      width: 100%;
+      height: 100%;
+      filter: drop-shadow(0 2px 1px rgba(170, 78, 0, .35));
     }
-    /* motion streaks trailing off the left */
-    .np-streaks {
-      left: -1%; top: 35%;
-      width: 22%; height: 30%;
-      background: linear-gradient(90deg, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, .9) 100%);
-      -webkit-mask: repeating-linear-gradient(0deg, #000 0 3px, transparent 3px 9px);
-              mask: repeating-linear-gradient(0deg, #000 0 3px, transparent 3px 9px);
-      filter: blur(.3px);
-      z-index: 0;
-    }
-    /* corner sparkles (4-point stars) */
-    .np-spark {
-      background: #fff;
-      clip-path: polygon(50% 0, 58% 42%, 100% 50%, 58% 58%, 50% 100%, 42% 58%, 0 50%, 42% 42%);
-      filter: drop-shadow(0 0 3px rgba(255, 255, 255, .9));
-      z-index: 5;
-    }
-    .np-spark-a { right: 5%;  top: 5%;  width: 12%; aspect-ratio: 1; }
-    .np-spark-b { right: 15%; top: 30%; width: 6%;  aspect-ratio: 1; opacity: .85; }
     /* press compress */
-    #nextButton.is-success:active .np-frame { filter: drop-shadow(0 2px 3px rgba(70, 50, 80, .3)); }
+    #nextButton.is-success:active .next-play { box-shadow: 0 3px 7px rgba(190, 90, 0, .35); }
 
     #tryAgain:not(.hidden) {
       animation: tryAgainPulse 1.6s ease-in-out infinite;
@@ -3587,12 +3583,12 @@
        hover/active/pulse rules below re-state it to avoid snapping to centre. */
     #nextButton.is-success {
       left: auto;
-      right: 40px;
+      right: 16px;
       top: 50%;
       bottom: auto;
-      width: 150px;
+      width: 92px;
       transform: translateY(-50%);
-      filter: drop-shadow(0 0 18px rgba(255, 130, 205, .8)) drop-shadow(0 8px 16px rgba(211, 79, 163, .45));
+      filter: drop-shadow(0 0 18px rgba(255, 176, 64, .8)) drop-shadow(0 8px 16px rgba(210, 110, 0, .45));
     }
 
     #nextButton.is-success:hover {
@@ -3609,11 +3605,11 @@
 
     @keyframes nextSuccessPulse {
       0%, 100% {
-        filter: drop-shadow(0 0 18px rgba(255, 130, 205, .8)) drop-shadow(0 8px 16px rgba(211, 79, 163, .45));
+        filter: drop-shadow(0 0 18px rgba(255, 176, 64, .8)) drop-shadow(0 8px 16px rgba(210, 110, 0, .45));
         transform: translateY(-50%) scale(1);
       }
       50% {
-        filter: drop-shadow(0 0 28px rgba(255, 160, 220, 1)) drop-shadow(0 0 44px rgba(233, 91, 176, .62));
+        filter: drop-shadow(0 0 28px rgba(255, 198, 96, 1)) drop-shadow(0 0 44px rgba(230, 130, 10, .62));
         transform: translateY(-50%) scale(1.045);
       }
     }
@@ -3968,6 +3964,33 @@
       z-index: 40;
     }
 
+    /* Idle HandNudge — a pointing hand that taps the correct button when the
+       player sits idle. The art (309×230) points up with the fingertip ≈0.49w /
+       0.48h in. NOTE: #handNudge lives inside #machineStage, which is 900px wide
+       (not the 1280 frame), so these left/top are machineStage-local — the
+       fingertip is anchored onto each button's centre at 150px wide. */
+    #handNudge {
+      position: absolute;
+      width: 150px;
+      height: auto;
+      z-index: 46;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+      filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.35));
+    }
+
+    #handNudge.show { opacity: 1; }
+
+    #handNudge.nudge-left { left: 33px; top: 280px; animation: handNudgeTap 0.8s ease-in-out infinite alternate; }
+    #handNudge.nudge-right { left: 721px; top: 280px; animation: handNudgeTap 0.8s ease-in-out infinite alternate; }
+    #handNudge.nudge-cut { left: 377px; top: 586px; animation: handNudgeTap 0.8s ease-in-out infinite alternate; }
+
+    @keyframes handNudgeTap {
+      0% { transform: translateY(0) scale(1); }
+      100% { transform: translateY(8px) scale(0.92); }
+    }
+
     .wrong-fit-glow {
       filter: none !important;
     }
@@ -4047,15 +4070,27 @@
         <div id="iraGlowRing" aria-hidden="true"></div>
         <img id="iraChar" src="assets/Ira.webp" alt="">
         <button id="playButton" type="button" aria-label="Let's go">
-          <span id="playButtonImg">PLAY</span>
+          <img id="playButtonImg" src="assets/Button.webp" alt="Play">
         </button>
       </section>
 
       <div id="machineStage" class="hidden" aria-hidden="true">
         <!-- base machine (always LaserMachineWithoutLines) -->
         <img id="machineImg" src="assets/LaserMachineWithoutLines.webp" alt="">
-        <!-- inline LaserMachine.svg for 3rd-attempt highlight (hidden by default) -->
-        <div id="machineSvgLayer" aria-hidden="true"></div>
+        <!-- Inline LaserMachine.svg for the after-2-misses cut-line guide (hidden
+             until .show). Inlined (not fetched) so the line elements are scriptable
+             AND it works from file:// where fetch() is blocked. Lines are, in order:
+             vertical, horizontal, slash(/), backslash(\) — see machineSvgLineIndexForAngle. -->
+        <div id="machineSvgLayer" aria-hidden="true">
+          <svg viewBox="0 0 830 835" fill="none" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="414.654" cy="414.654" r="400.338" fill="#004E7C"/>
+            <circle cx="414.654" cy="414.654" r="369.717" fill="#DEF0FF"/>
+            <line x1="415.788" y1="44.9375" x2="415.788" y2="786.639" stroke="#7BAEFF" stroke-width="2.2682" stroke-dasharray="4.54 4.54"/>
+            <line x1="785.504" y1="416.921" x2="43.8021" y2="416.921" stroke="#7BAEFF" stroke-width="2.2682" stroke-dasharray="4.54 4.54"/>
+            <line x1="153.009" y1="679.739" x2="677.471" y2="155.277" stroke="#7BAEFF" stroke-width="2.2682" stroke-dasharray="4.54 4.54"/>
+            <line x1="152.345" y1="153.009" x2="676.807" y2="677.471" stroke="#7BAEFF" stroke-width="2.2682" stroke-dasharray="4.54 4.54"/>
+          </svg>
+        </div>
         <!-- LaserMachine.svg overlay — tutorial guide lines only -->
         <img id="tutorialOverlay" src="assets/LaserMachine.svg" alt="" aria-hidden="true">
         <img id="guideLineHighlight" src="assets/LaserMachine.svg" alt="" aria-hidden="true">
@@ -4079,6 +4114,8 @@
         <!-- TappedCutButton.webp tutorial highlight -->
         <img id="cutOverlay" src="assets/TappedCutButton.webp" alt="" aria-hidden="true">
         <img id="handGesture" class="hand-gesture hidden" src="assets/hand.svg" alt="" aria-hidden="true">
+        <!-- Idle nudge: points at the button the player should tap next (gameplay only) -->
+        <img id="handNudge" src="assets/HandNudge.svg" alt="" aria-hidden="true">
         <!-- Invisible hit areas -->
         <button id="hitLeft" class="machine-hit" type="button" aria-label="Move laser left"></button>
         <button id="hitRight" class="machine-hit" type="button" aria-label="Move laser right"></button>
@@ -4093,14 +4130,13 @@
 
       <button id="nextButton" class="hidden" type="button" aria-label="Next">
         <img src="assets/nextButton.webp" alt="">
-        <!-- Success Next: a code-built glossy pink play button, pure HTML+CSS (shown via .is-success). -->
+        <!-- Success Next: a code-built glossy orange circular arrow button, pure HTML+CSS (shown via .is-success). -->
         <span class="next-play" aria-hidden="true">
-          <span class="np-streaks"></span>
-          <span class="np-frame"></span>
-          <span class="np-edge"></span>
-          <span class="np-fill"></span>
-          <span class="np-spark np-spark-a"></span>
-          <span class="np-spark np-spark-b"></span>
+          <span class="np-body">
+            <svg class="np-arrow" viewBox="0 0 100 100" aria-hidden="true">
+              <path d="M22 40 H49 V27 L75 50 L49 73 V60 H22 Z" fill="#fff" stroke="#fff" stroke-width="9" stroke-linejoin="round" stroke-linecap="round"/>
+            </svg>
+          </span>
         </span>
       </button>
     </section>
@@ -4984,10 +5020,14 @@
         podLeft: ASSETS + "SquareHollow.webp",
         podRight: ASSETS + "SquareHollow.webp",
         cornerSlot: ASSETS + "triangleHollow.webp",
-        cornerRotate: [0, 90, 270, 180],
-        /* Seated-triangle size = this × the hollow box's short side (~0.73 → the
-           ~116px square seat aligned in the overlay; matches triangleHollow). */
-        slotFill: { w: 0.73, h: 0.73 },
+        /* Hollows oriented as the X-cut pieces themselves (apex toward centre):
+           TL ▶, TR ▽, BL △, BR ◀ (Figma 35:2446) — so each cut triangle slides
+           straight in without re-orienting. (triangleHollow rotates: 45→△, 135→▶,
+           225→▽, 315→◀.) */
+        cornerRotate: [135, 225, 45, 315],
+        /* Seated-triangle box = this × the hollow's measured (rotated) bbox (~231),
+           so 0.69 → ~160px box, matching the calibrated layout export. */
+        slotFill: { w: 0.69, h: 0.69 },
         podW: 132,
         botAspect: 894 / 606,
         podAspectLeft: 1056 / 444,
@@ -5206,6 +5246,7 @@
       btnCut: document.getElementById("btnCut"),
       cutOverlay: document.getElementById("cutOverlay"),
       handGesture: document.getElementById("handGesture"),
+      handNudge: document.getElementById("handNudge"),
       hitLeft: document.getElementById("hitLeft"),
       hitRight: document.getElementById("hitRight"),
       hitCut: document.getElementById("hitCut"),
@@ -5242,15 +5283,6 @@
       }
     }
 
-    var _laserMachineSvgPromise = null;
-    function loadLaserMachineSvg() {
-      if (!_laserMachineSvgPromise) {
-        _laserMachineSvgPromise = fetch(ASSETS + "LaserMachine.svg")
-          .then(function (r) { return r.text(); });
-      }
-      return _laserMachineSvgPromise;
-    }
-
     /* Map a target angle (deg, 0..360) to the index of the corresponding <line>
        in LaserMachine.svg: vertical, horizontal, slash-up, backslash-down. */
     function machineSvgLineIndexForAngle(deg) {
@@ -5263,13 +5295,31 @@
       return -1;
     }
 
+    /* The next correct cut still needed THIS attempt, as a screen angle for the
+       SVG guide line. Axis rounds need vertical(90)+horizontal(0); diagonal-win
+       rounds need slash(45)+backslash(135). Reads gridCutOrients so after the
+       first cut lands it advances to the perpendicular line. null = both done. */
+    function gridGuideAngleForRound(r) {
+      var needed = (r && r.winCutPair === "diag") ? ["slash", "backslash"] : ["vertical", "horizontal"];
+      var done = state.gridCutOrients || [];
+      var orientAngle = { vertical: 90, horizontal: 0, slash: 45, backslash: 135 };
+      for (var i = 0; i < needed.length; i++) {
+        if (done.indexOf(needed[i]) === -1) { return orientAngle[needed[i]]; }
+      }
+      return null;
+    }
+
     function applyAttemptGuides() {
       clearAttemptGuides();
       if ((state.wrongAttempts || 0) === 1) {
         els.tutorialOverlay.classList.add("show", "supportive-guide");
       }
       if ((state.wrongAttempts || 0) >= 2) {
-        showMachineGuideLine(currentRound().targetAngle);
+        var r = currentRound();
+        /* Grid rounds derive the line from which cut is still missing (square
+           rounds have no single targetAngle); legacy rounds use targetAngle. */
+        var deg = (r && r.cut === "grid") ? gridGuideAngleForRound(r) : (r ? r.targetAngle : undefined);
+        if (deg !== null && deg !== undefined) { showMachineGuideLine(deg); }
       }
     }
 
@@ -5286,6 +5336,16 @@
       if (state.idleHintTimer) { clearTimeout(state.idleHintTimer); state.idleHintTimer = null; }
       els.btnLeft.classList.remove("idle-hint");
       els.btnRight.classList.remove("idle-hint");
+      if (els.handNudge) { els.handNudge.classList.remove("show", "nudge-left", "nudge-right", "nudge-cut"); }
+    }
+
+    /* Park the HandNudge over the button the player should tap next: the rotate
+       button toward the target, or CUT when the laser is already aligned. */
+    function showHandNudge(dir) {
+      if (!els.handNudge) { return; }
+      els.handNudge.classList.remove("nudge-left", "nudge-right", "nudge-cut");
+      var cls = dir === "left" ? "nudge-left" : (dir === "right" ? "nudge-right" : "nudge-cut");
+      els.handNudge.classList.add(cls, "show");
     }
 
     function idleHintDirection() {
@@ -5298,10 +5358,18 @@
          perpendicular (horizontal) one instead of saying "already aligned". */
       if (r.cut === "grid") {
         var done = state.gridCutOrients || [];
+        /* Steer toward whichever cut is still missing, so after the first cut the
+           hint points to the PERPENDICULAR one instead of "already aligned".
+           Axis rounds: vertical↔horizontal. Diagonal rounds (triangle1): the two
+           diagonals — backslash is snap 45 (45/225), slash is snap 135 (135/315). */
         if (done.indexOf("vertical") !== -1 && done.indexOf("horizontal") === -1) {
           targets = [0, 180];
         } else if (done.indexOf("horizontal") !== -1 && done.indexOf("vertical") === -1) {
           targets = [90, 270];
+        } else if (done.indexOf("backslash") !== -1 && done.indexOf("slash") === -1) {
+          targets = [135, 315];   /* backslash done → steer to slash */
+        } else if (done.indexOf("slash") !== -1 && done.indexOf("backslash") === -1) {
+          targets = [45, 225];    /* slash done → steer to backslash */
         }
       }
       /* Button semantics (matching tutorial): LEFT button rotates +45,
@@ -5326,6 +5394,7 @@
           var dir = idleHintDirection();
           if (dir === "left") { els.btnLeft.classList.add("idle-hint"); }
           else if (dir === "right") { els.btnRight.classList.add("idle-hint"); }
+          showHandNudge(dir);   /* dir null (already aligned) → nudge the CUT button */
         }
       }, 3000);
     }
@@ -5360,8 +5429,26 @@
         els.instructionText.textContent = "";
         return playInstructionAudio("", options);
       }
+      /* While the lab-gate doors are still covering the screen, hold the panel
+         hidden and stash the line — runLabGate reveals it (with the entrance
+         animation + audio) the moment the doors finish opening. */
+      if (state.gateOpening) {
+        state.pendingInstruction = { text: text, options: options };
+        hide(els.instruction);
+        els.instructionText.textContent = "";
+        return null;
+      }
+      /* Replay the face-box-then-unroll entrance on a fresh appear OR whenever the
+         line changes (a new instruction beat) — but not when the same text is
+         re-set on an already-showing panel. */
+      var freshAppear = els.instruction.classList.contains("hidden") || els.instructionText.textContent !== text;
       els.instructionText.textContent = text;
       show(els.instruction);
+      if (freshAppear) {
+        els.instruction.classList.remove("intro-reveal");
+        void els.instruction.offsetWidth;   /* reflow so the animation restarts */
+        els.instruction.classList.add("intro-reveal");
+      }
       return playInstructionAudio(text, options);
     }
 
@@ -5379,6 +5466,7 @@
       if (!els.labGate) { nextStep(); return; }
       var gate = els.labGate;
       state.gateOpening = true;
+      state.pendingInstruction = null;
       gate.classList.remove("gate-open");
       gate.classList.add("gate-active");   /* closed, covering the screen */
       void gate.offsetWidth;               /* reflow so the slide animates from closed */
@@ -5390,7 +5478,15 @@
       setTimeout(function () {
         gate.classList.remove("gate-active", "gate-open");
         state.gateOpening = false;
-        if (FLOW[state.step] && FLOW[state.step].scene === "intro") { playChargeBeam(); }
+        if (FLOW[state.step] && FLOW[state.step].scene === "intro") {
+          playChargeBeam();
+        } else if (state.pendingInstruction) {
+          /* The panel was held back while the doors covered the screen — reveal it
+             now (with its face-box → unroll entrance) so it plays in full view. */
+          var p = state.pendingInstruction;
+          state.pendingInstruction = null;
+          setInstruction(p.text, p.options);
+        }
       }, 2060);   /* 500ms hold + 1.5s slide + 60ms */
     }
 
@@ -5454,7 +5550,7 @@
       });
       if (els.cornerSlots) {
         hide(els.cornerSlots);
-        els.cornerSlots.classList.remove("slots-high", "slots-connector", "slots-fit", "slots-diamond");
+        els.cornerSlots.classList.remove("slots-high", "slots-connector", "slots-fit", "slots-diamond", "slots-tall");
         els.cornerSlotEls.forEach(function (slot) { slot.classList.remove("show"); });
       }
       if (els.podConnectors) {
@@ -6656,6 +6752,9 @@
        centre out to the corner. Animating t from 0→1 (CSS clip-path morph, or
        per-frame in the preview) makes each piece visibly OPEN OUT of the cut
        square into its corner slot — the logical "split into 4, fan to corners". */
+    /* triangle1 corner clips ◤◥◣◢ (t=1) — the hollow art's own triangle. The piece
+       is rotated +135° (see makeCornerTriangle) so these become the cardinal
+       hollows ▶▽△◀, nesting in the hollow exactly. No morph (seats at t=1). */
     var TRI_OUTER = [
       [[0, 0], [100, 0]],       /* tl: top edge */
       [[100, 0], [100, 100]],   /* tr: right edge */
@@ -6695,11 +6794,30 @@
       var ax = (50 + (a[0] - 50) * t).toFixed(2), ay = (50 + (a[1] - 50) * t).toFixed(2);
       return "polygon(" + o[0][0] + "% " + o[0][1] + "%, " + o[1][0] + "% " + o[1][1] + "%, " + ax + "% " + ay + "%)";
     }
+    /* Centred cardinal-triangle clips for triangle1 — the X-cut quarter shape
+       (right-angle apex toward the screen centre), drawn SYMMETRICALLY about the
+       box centre so that centring the box on the slot centres the visible triangle
+       (no rotation, no nudge, no morph). [tl ▶, tr ▽, bl △, br ◀] */
+    var TRI_CARDINAL = [
+      "polygon(33.33% 0%, 33.33% 100%, 83.33% 50%)",   /* ▶ apex right */
+      "polygon(0% 33.33%, 100% 33.33%, 50% 83.33%)",   /* ▽ apex down */
+      "polygon(0% 66.67%, 100% 66.67%, 50% 16.67%)",   /* △ apex up */
+      "polygon(66.67% 0%, 66.67% 100%, 16.67% 50%)"    /* ◀ apex left */
+    ];
+    /* The right-angle apex (box fraction) of each TRI_CARDINAL clip — used to
+       assemble the four pieces into a square (all apexes meet at the centre). */
+    var TRI_APEX_FRAC = [[0.8333, 0.5], [0.5, 0.8333], [0.5, 0.1667], [0.1667, 0.5]];
+    /* triangle1 seat nudge (game px, toward the screen centre) — the centred clip's
+       centroid is at the box centre, but the hollow's cardinal triangle sits a bit
+       toward centre, so shift the piece to nest in it. From the layout export. */
+    var TRI_SEAT_NUDGE = [{ x: 26, y: 2 }, { x: -3, y: 27 }, { x: 2, y: -26 }, { x: -26, y: -2 }];
     function makeCornerTriangle(r, cornerIdx, w, h, t) {
       var d = document.createElement("div");
       d.className = "flying-half tri-piece";
       d.style.background = r.blockColor || "#ED9CFF";
-      d.style.clipPath = triClipAt(cornerIdx, t == null ? 1 : t);
+      /* diamond morphs through triClipAt; triangle1 uses the fixed centred cardinal
+         clip (the cut shape) — it just slides in, never changing shape. */
+      d.style.clipPath = r.diamondHollows ? triClipAt(cornerIdx, t == null ? 1 : t) : (TRI_CARDINAL[cornerIdx] || TRI_CARDINAL[0]);
       d.style.borderRadius = "0";
       d.style.filter = "none";
       d.style.width = w + "px";
@@ -6722,9 +6840,10 @@
     function makeTriSeatPiece(r, cornerIdx, sc, nudgeX, nudgeY) {
       var box = triSeatBox(r, sc);
       var piece = makeCornerTriangle(r, cornerIdx, box.w, box.h);
+      var stnu = (!r.diamondHollows && TRI_SEAT_NUDGE[cornerIdx]) ? TRI_SEAT_NUDGE[cornerIdx] : { x: 0, y: 0 };
       piece.style.position = "absolute";
-      piece.style.left = (sc.x + (nudgeX || 0) - box.w / 2) + "px";
-      piece.style.top = (sc.y + (nudgeY || 0) - box.h / 2) + "px";
+      piece.style.left = (sc.x + (nudgeX || 0) + stnu.x - box.w / 2) + "px";
+      piece.style.top = (sc.y + (nudgeY || 0) + stnu.y - box.h / 2) + "px";
       return piece;
     }
 
@@ -7800,6 +7919,34 @@
       };
     }
 
+    /* The seated quarter piece (flying-half) nearest a given corner slot, or
+       null if none are seated yet. On the fit/success screen the visible "pod"
+       is this piece, not the padded SquareHollow box — so the wire anchors to
+       it. Nearest-centre match is order-agnostic (4 pieces, 4 distinct slots). */
+    function seatedPieceFor(slot) {
+      if (!els.flightLayer) { return null; }
+      var pieces = els.flightLayer.querySelectorAll(".flying-half");
+      if (!pieces.length) { return null; }
+      var sc = gameSpaceCenter(slot), best = null, bestD = Infinity;
+      for (var k = 0; k < pieces.length; k++) {
+        var pc = gameSpaceCenter(pieces[k]);
+        var d = (pc.x - sc.x) * (pc.x - sc.x) + (pc.y - sc.y) * (pc.y - sc.y);
+        if (d < bestD) { bestD = d; best = pieces[k]; }
+      }
+      return best;
+    }
+
+    /* Like gameSpaceCenter, but the w/h come from offsetWidth/offsetHeight (the
+       layout box, which IGNORES the scale-in transform) while the centre stays
+       from the live rect (centre is invariant under the centre-origin scale).
+       Used to anchor the charge wires to a hollow's FULL size even while it is
+       still popping in — otherwise the last-staggered pod is measured small and
+       the start dot gets pulled down inside the hollow. */
+    function slotBox(el) {
+      var c = gameSpaceCenter(el);
+      return { x: c.x, y: c.y, w: el.offsetWidth, h: el.offsetHeight };
+    }
+
     /* Draw glowing white/blue wires from each corner pod to a bot's head and
        animate them drawing in. Pairing: TL→left, BL→mid-left, TR→right,
        BR→mid-right (outer corners to outer bots). */
@@ -7881,25 +8028,42 @@
         var a = gameSpaceCenter(p.slot);   /* pod centre */
         var b = gameSpaceCenter(p.bot);    /* bot centre */
         var headY = b.y - b.h * (success ? 0.52 : 0.30);   /* success: land ON the head-plug crown (~0.52 above centre), not the face. charge screen keeps 0.30, unchanged */
+        /* Anchor box for the wire's start. Default: the hollow slot, whose PNG
+           pads the sides, so EDGE/BOTTOM_EDGE (<0.5) land on the visible niche
+           rim. Non-diag pods use slotBox (transform-independent size) so a pod
+           still scaling in isn't measured small — which would pull the start dot
+           down inside the hollow. Diag keeps the rotated rect its anchor needs.
+           On the fit/success screen the visible pod is the seated piece — smaller
+           and unpadded — so anchor to IT at the true edge (0.5), else the dot
+           floats in the gap between piece and hollow rim. */
+        var pod = diag ? a : slotBox(p.slot), edgeX = EDGE, edgeY = BOTTOM_EDGE;
+        if (success && !diag) {
+          var seat = seatedPieceFor(p.slot);
+          if (seat) { pod = gameSpaceCenter(seat); edgeX = 0.5; edgeY = 0.5; }
+        }
         var sx, sy;
-        if (diag) {
-          /* Anchor the wire ON the seated triangle's mass (its ~centroid) so the
-             line springs from the pod, not the empty box corner. triangle1's mass
-             sits toward the OUTER corner; the diamond (triangle2) is rotated 180°
-             so its mass sits toward the CENTRE — flip the anchor inward there. */
+        if (diag && !currentRound().diamondHollows) {
+          /* triangle1: spring the wire from the SEATED triangle (slot centre + its
+             seat nudge), so the line clearly comes out of the pod the player sees. */
+          var tnw = TRI_SEAT_NUDGE[i] || { x: 0, y: 0 };
+          sx = a.x + tnw.x;
+          sy = a.y + tnw.y;
+        } else if (diag) {
+          /* diamond (triangle2): anchor on the seated triangle's mass toward the
+             centre (its hollows are rotated 180°). */
           var sgx = (p.slot.classList.contains("cs-tr") || p.slot.classList.contains("cs-br")) ? 1 : -1;
           var sgy = (p.slot.classList.contains("cs-bl") || p.slot.classList.contains("cs-br")) ? 1 : -1;
-          if (currentRound().diamondHollows) { sgx = -sgx; sgy = -sgy; }
+          sgx = -sgx; sgy = -sgy;
           sx = a.x + sgx * a.w / 6;
           sy = a.y + sgy * a.h / 6;
         } else if (p.top) {
-          /* top hollows exit the left/right edge toward the bot */
-          sx = a.x + (b.x >= a.x ? 1 : -1) * a.w * EDGE;
-          sy = a.y;
+          /* top pods exit the left/right edge toward the bot */
+          sx = pod.x + (b.x >= pod.x ? 1 : -1) * pod.w * edgeX;
+          sy = pod.y;
         } else {
-          /* bottom hollows exit the top edge (the wire goes up first) */
-          sx = a.x;
-          sy = a.y - a.h * BOTTOM_EDGE;
+          /* bottom pods exit the top edge (the wire goes up first) */
+          sx = pod.x;
+          sy = pod.y - pod.h * edgeY;
         }
         /* head landing point — bot crown by default, or a baked/debug override */
         var hx = b.x, hyv = headY;
@@ -7954,18 +8118,24 @@
          finishes drawing into the head at be.delay (its draw-delay + 1s draw),
          so seat this bot's plug at that exact moment — line and plug connect to
          the head together. */
-      beads.forEach(function (be) {
+      /* The bead rides the wire with an ease-out spline, so it has visually
+         reached the head ~0.8s after it kicks off. At that moment the bot's
+         charge has "landed": glow it, and fire onBotCharged so the caller can
+         power it up (turn it happy) right then — no waiting. */
+      var ARRIVE = 800;
+      beads.forEach(function (be, i) {
         later(function () { try { be.motion.beginElement(); } catch (e) {} }, be.delay);
         later(function () { seatHeadPlug(be.bot, success); }, be.delay);
-      });
-
-      /* Bots glow softly once the circuit has energised. */
-      if (!quiet) {
         later(function () {
-          [els.leftBot, els.rightBot, els.midLeftBot, els.midRightBot].forEach(function (bt) {
-            if (bt) { bt.classList.add("pod-charged-glow"); }
-          });
-        }, 2000);
+          if (be.bot) { be.bot.classList.add("pod-charged-glow"); }
+          if (opts && opts.onBotCharged) { opts.onBotCharged(be.bot, i); }
+        }, be.delay + ARRIVE);
+      });
+      /* Once the LAST bot's energy has landed, let the caller run its
+         after-charge beat (e.g. the "Yay, the bots are charged" panel + audio). */
+      if (!quiet && opts && opts.onAllCharged && beads.length) {
+        var lastDelay = beads.reduce(function (m, be) { return Math.max(m, be.delay); }, 0);
+        later(function () { opts.onAllCharged(); }, lastDelay + ARRIVE + 150);
       }
     }
 
@@ -8082,12 +8252,18 @@
         els.cornerSlotEls.forEach(function (slot, i) {
           var sc = slots[i];
           var box = triSeatBox(r, sc);
-          var piece = makeCornerTriangle(r, i, box.w, box.h, 0);   /* start: cut quarter */
+          var piece = makeCornerTriangle(r, i, box.w, box.h, r.diamondHollows ? 0 : 1);
           piece.style.position = "absolute";
-          piece.style.left = (cx - box.w / 2) + "px";
-          piece.style.top = (cy - box.h / 2) + "px";
+          /* Assemble as a square: place each piece so its apex meets at the centre. */
+          var pStartScale = (r.blockW || 200) / box.w;
+          var paf = (!r.diamondHollows && TRI_APEX_FRAC[i]) ? TRI_APEX_FRAC[i] : [0.5, 0.5];
+          var sCx = cx - (paf[0] - 0.5) * box.w * pStartScale;
+          var sCy = cy - (paf[1] - 0.5) * box.h * pStartScale;
+          piece.style.left = (sCx - box.w / 2) + "px";
+          piece.style.top = (sCy - box.h / 2) + "px";
           els.flightLayer.appendChild(piece);
-          var ex = sc.x + dnx, ey = sc.y + dny;   /* seat = hollow centre */
+          var ptnu = (!r.diamondHollows && TRI_SEAT_NUDGE[i]) ? TRI_SEAT_NUDGE[i] : { x: 0, y: 0 };
+          var ex = sc.x + dnx + ptnu.x, ey = sc.y + dny + ptnu.y;   /* seat = nested in hollow */
           /* Clean radial guide: a gentle tangential bow (shared sign → the four
              arcs pinwheel instead of crossing the block); arrow starts at the
              block edge and its head points straight at the hollow. */
@@ -8110,9 +8286,8 @@
           addSlotPathGuide(cx + ux * 104, cy + uy * 104, ctlX, ctlY, aimX, aimY, i);
           /* start ASSEMBLED at block size (the four cut quarters tile a clean
              square at centre); the bounce then carries them out to the hollows. */
-          var startScale = (r.blockW || 200) / box.w;
-          piece.style.transform = "scale(" + startScale.toFixed(3) + ")";
-          anims.push({ piece: piece, sx: cx, sy: cy, cx2: ctlX, cy2: ctlY, ex: ex, ey: ey, diag: true, corner: i, startScale: startScale });
+          piece.style.transform = "scale(" + pStartScale.toFixed(3) + ")";
+          anims.push({ piece: piece, sx: sCx, sy: sCy, cx2: ctlX, cy2: ctlY, ex: ex, ey: ey, diag: true, corner: i, startScale: pStartScale });
         });
       } else {
       [0, 1, 2, 3].forEach(function (i) {
@@ -8170,7 +8345,9 @@
         if (a.diag) {
           var s = a.startScale + (1 - a.startScale) * t;
           a.piece.style.transform = "translate(" + tx + "px," + ty + "px) scale(" + s.toFixed(3) + ")";
-          a.piece.style.clipPath = triClipAt(a.corner, t);   /* t=0 tiles the square → t=1 seats */
+          /* triangle1 keeps its constant shape (clip on the rotated inner, no morph)
+             and just slides in; diamond opens out (t=0 tiles → t=1 seats). */
+          if (r.diamondHollows) { a.piece.style.clipPath = triClipAt(a.corner, t); }
         } else {
           var scX = 1 + (a.seatX - 1) * t, scY = 1 + (a.seatY - 1) * t;
           a.piece.style.transform = "translate(" + tx + "px," + ty + "px) scale(" + scX.toFixed(3) + "," + scY.toFixed(3) + ")";
@@ -8320,7 +8497,7 @@
         setInstruction("");
         setupBots("layout-clear");
         els.playBg.src = ASSETS + "GameStartScreen.webp";
-        els.playButtonImg.src = ASSETS + "LetsGoButton.webp";
+        els.playButtonImg.src = ASSETS + "Button.webp";
         els.playButtonImg.alt = "Let's Go";
         els.playButton.setAttribute("aria-label", "Let's go");
         els.playStage.classList.add("start-mode");
@@ -8557,17 +8734,22 @@
            those halves into four equal quarters. */
         if (isFinalCut) { tutSplitGrid(); } else { tutSplitHalves(); }
       }, 950);
-      later(function () {
-        if (!isFinalCut) {
-          /* Keep the halves on screen — the next (horizontal) cut divides them. */
+      if (!isFinalCut) {
+        /* Keep the halves on screen — the next (horizontal) cut divides them. */
+        later(function () {
           state.locked = false;
           tutSetStep(step + 1);
-        } else {
+        }, 1900);
+      } else {
+        /* Final cut: hold the four equal parts on screen for a few seconds so the
+           player can take in the result before moving to the Let's-play screen
+           (the split lands at ~950ms, so this leaves ~2.8s of settled view). */
+        later(function () {
           state.tutActive = false;
           lowerThemeAfterTutorial();
           nextStep();
-        }
-      }, 1900);
+        }, 3800);
+      }
     }
 
     /* Vertical cut: whole tutorial block → two side-by-side halves. */
@@ -8636,7 +8818,7 @@
       setInstruction("");
       setupBots("layout-clear");
       els.playBg.src = ASSETS + "LetsPlayBg.webp";
-      els.playButtonImg.src = ASSETS + "PlayButton.webp";
+      els.playButtonImg.src = ASSETS + "Button.webp";
       els.playButtonImg.alt = "Play";
       els.playButton.setAttribute("aria-label", "Play");
       els.playStage.classList.add("preplay-mode");
@@ -8880,27 +9062,25 @@
       els.cutLine.classList.add("show", "correct-guide");
     }
 
+    /* Swap the photo ring for the inline LaserMachine.svg and glow the ONE cut
+       line the player should make next (deg → line index). Synchronous + no
+       fetch, so it works from file://. Called again after the first cut lands to
+       advance the glow to the perpendicular line. */
     function showMachineGuideLine(deg) {
       els.tutorialOverlay.classList.remove("show", "supportive-guide", "line-guide");
       els.guideLineHighlight.classList.remove("show");
       els.guideLineHighlight.style.clipPath = "";
       els.cutLine.classList.remove("show", "correct-guide");
+      if ((state.wrongAttempts || 0) < 2) { return; }
       var idx = machineSvgLineIndexForAngle(deg);
-      loadLaserMachineSvg().then(function (svgText) {
-        if ((state.wrongAttempts || 0) < 2) { return; }
-        els.machineSvgLayer.innerHTML = svgText;
-        var svg = els.machineSvgLayer.querySelector("svg");
-        if (svg) {
-          svg.setAttribute("preserveAspectRatio", "xMidYMid meet");
-          var lines = svg.querySelectorAll("line");
-          lines.forEach(function (ln) { ln.classList.remove("correct-line-glow"); });
-          if (idx >= 0 && lines[idx]) {
-            lines[idx].classList.add("correct-line-glow");
-          }
-        }
-        els.machineSvgLayer.classList.add("show");
-        els.machineImg.style.display = "none";
-      });
+      var svg = els.machineSvgLayer.querySelector("svg");
+      if (svg) {
+        var lines = svg.querySelectorAll("line");
+        lines.forEach(function (ln) { ln.classList.remove("correct-line-glow"); });
+        if (idx >= 0 && lines[idx]) { lines[idx].classList.add("correct-line-glow"); }
+      }
+      els.machineSvgLayer.classList.add("show");
+      els.machineImg.style.display = "none";
     }
 
     function hideBeam() {
@@ -9103,6 +9283,12 @@
           angles.push(lineAngle);
           orients.push(cutOrientation(effAngle));
           splitMachineBlock(effAngle);
+          /* In a guided attempt (≥2 misses), advance the glowing cut-line to the
+             perpendicular one the player still needs. */
+          if ((state.wrongAttempts || 0) >= 2 && r.cut === "grid") {
+            var nextDeg = gridGuideAngleForRound(r);
+            if (nextDeg !== null) { showMachineGuideLine(nextDeg); }
+          }
           later(function () {
             state.locked = false;
             startIdleHint();
@@ -9205,6 +9391,30 @@
       });
     }
 
+    /* Power up ONE bot the instant its energy lands: swap to happy art + jump.
+       The connectors were drawn against the happy geometry, so the head returns
+       to exactly where the wire/plug expect it. */
+    function setBotHappy(r, bot) {
+      if (!bot) { return; }
+      bot.src = r.happyBot;
+      bot.classList.add("happy");
+      var slot = bot.parentNode;
+      if (slot) { slot.classList.remove("celebrate-jump"); void slot.offsetWidth; slot.classList.add("celebrate-jump"); }
+    }
+
+    /* Revert the four bots to their sad art (no glow, no jump). Used to draw the
+       connectors against the HAPPY geometry, then show sad until the energy lands
+       — the swap back happens in the same JS task, so no happy frame is painted. */
+    function gridBotsSad(r) {
+      [els.leftBot, els.rightBot, els.midLeftBot, els.midRightBot].forEach(function (b) {
+        b.src = r.sadBot;
+        b.classList.remove("happy");
+      });
+      [els.leftBot.parentNode, els.rightBot.parentNode, els.midLeftBot.parentNode, els.midRightBot.parentNode].forEach(function (s) {
+        s.classList.remove("celebrate-jump");
+      });
+    }
+
     /* Fly the four quarter pieces from the machine center out to the four
        corner slots. success=true → they land centered and fitted; false → they
        fall short and tilt (visible miss). */
@@ -9238,24 +9448,34 @@
         els.cornerSlotEls.forEach(function (slot, i) {
           var sc = gameSpaceCenter(slot);
           var box = triSeatBox(r, sc);
-          var piece = makeCornerTriangle(r, i, box.w, box.h, 0);
+          var piece = makeCornerTriangle(r, i, box.w, box.h, r.diamondHollows ? 0 : 1);
           piece.classList.add("flying-half");
           piece.style.position = "absolute";
-          piece.style.left = (center.x - box.w / 2) + "px";
-          piece.style.top = (center.y - box.h / 2) + "px";
           piece.style.transition = "transform .8s cubic-bezier(.18,.89,.32,1.08), clip-path .8s cubic-bezier(.18,.89,.32,1.08), opacity .4s ease";
           var startScale = (r.blockW || 200) / box.w;   /* read block-sized at centre, shrink to cavity */
+          /* triangle1 starts ASSEMBLED as a square: place each piece so its apex
+             (the centred cardinal clip's right-angle point) sits at the block
+             centre, so the four cut triangles tile a block-sized square and then
+             split outward to their hollows. Diamond keeps its centre-start. */
+          var af = (!r.diamondHollows && TRI_APEX_FRAC[i]) ? TRI_APEX_FRAC[i] : [0.5, 0.5];
+          var startCx = center.x - (af[0] - 0.5) * box.w * startScale;
+          var startCy = center.y - (af[1] - 0.5) * box.h * startScale;
+          piece.style.left = (startCx - box.w / 2) + "px";
+          piece.style.top = (startCy - box.h / 2) + "px";
           piece.style.transform = "scale(" + startScale.toFixed(3) + ")";
           layer.appendChild(piece);
-          var dx = (sc.x + dnx) - center.x, dy = (sc.y + dny) - center.y;
+          var tnu = (!r.diamondHollows && TRI_SEAT_NUDGE[i]) ? TRI_SEAT_NUDGE[i] : { x: 0, y: 0 };
+          var dx = (sc.x + dnx + tnu.x) - startCx, dy = (sc.y + dny + tnu.y) - startCy;
           setTimeout(function () {
             requestAnimationFrame(function () {
               if (success) {
                 piece.style.transform = "translate(" + dx.toFixed(1) + "px," + dy.toFixed(1) + "px) scale(1)";
-                piece.style.clipPath = triClipAt(i, 1);   /* open out into the corner seat */
+                /* diamond morphs to its seated corner triangle; triangle1's shape is
+                   constant (clip on its rotated inner) and just slides into the hollow. */
+                if (r.diamondHollows) { piece.style.clipPath = triClipAt(i, 1); }
               } else {
                 piece.style.transform = "translate(" + (dx * 0.5).toFixed(1) + "px," + (dy * 0.5).toFixed(1) + "px) scale(" + (startScale * 0.7).toFixed(3) + ")";
-                piece.style.clipPath = triClipAt(i, 0.5);
+                if (r.diamondHollows) { piece.style.clipPath = triClipAt(i, 0.5); }
                 piece.classList.add("soft-mismatch");
               }
             });
@@ -9317,7 +9537,7 @@
     /* Incorrect cut: fly the player's REAL pieces (whatever shapes the two cuts
        produced) toward the corner hollows, then vibrate them in place — a
        triangle/odd sector visibly will not seat in a square slot. */
-    function flySectorsToCornersVibrate(r, center, a1, a2, onDone) {
+    function flySectorsToCornersVibrate(r, center, a1, a2, contain, onDone) {
       var layer = els.flightLayer;
       els.machineBlock.innerHTML = "";
       hide(els.machineStage);
@@ -9326,18 +9546,52 @@
       geos.forEach(function (geo, i) {
         var slot = els.cornerSlotEls[i % els.cornerSlotEls.length];
         var sc = gameSpaceCenter(slot);
-        var pcx = center.x + (geo.centroid.x - W / 2);
-        var pcy = center.y + (geo.centroid.y - H / 2);
         var piece = makeSectorPiece(r, geo, W, H);
         piece.classList.add("flying-half");
         piece.style.position = "absolute";
-        piece.style.left = (center.x - W / 2 + geo.minX) + "px";
-        piece.style.top = (center.y - H / 2 + geo.minY) + "px";
+        var left = center.x - W / 2 + geo.minX;
+        var top = center.y - H / 2 + geo.minY;
+        piece.style.left = left + "px";
+        piece.style.top = top + "px";
         piece.style.transformOrigin = "center center";
         piece.style.transition = "transform .8s cubic-bezier(.18,.89,.32,1.08)";
         layer.appendChild(piece);
-        var s = (sc.w * 0.42) / Math.max(geo.width, geo.height);
-        var dx = sc.x - pcx, dy = sc.y - pcy;
+        /* seatW = the footprint a CORRECT quarter occupies in this slot. Two
+           modes, by cut type:
+             • contain (equal-but-wrong-shape, e.g. diagonal triangles): the piece
+               has a quarter's area but a wider bbox, so it can't both keep true
+               scale AND fit one slot. Scale its longest side down to seatW and
+               CENTRE it in the hollow — reads as "right size, wrong shape."
+             • else (unequal cut): keep the true seat scale (seatW per block-half)
+               and anchor the piece's OUTER corner at the slot's outer corner, so a
+               quarter-sized chunk seats in the hollow and the excess spills inward
+               — the extra is plainly outside the hollow. */
+        var hw = W / 2;
+        var cX = geo.width / 2, cY = geo.height / 2;   /* wrap-local centre (scale origin) */
+        var seatW = r.squareSeat
+          ? Math.min(sc.w, sc.h) * r.slotFill.w
+          : (r.slotFill ? sc.w * r.slotFill.w : sc.w * 0.52);
+        var s, dx, dy;
+        if (contain) {
+          s = seatW / Math.max(geo.width, geo.height);
+          /* land the bbox centre on the slot centre (scale is about that centre,
+             so it stays put — clean centring) */
+          dx = sc.x - left - cX;
+          dy = sc.y - top - cY;
+        } else {
+          s = seatW / hw;
+          /* outer bbox corner (toward this slot's screen corner) and the slot's
+             outer corner, offset inward by a quarter-window so a quarter seats */
+          var outRight = (i % 2 === 1);   /* tr, br are on the right */
+          var outDown = (i >= 2);         /* bl, br are on the bottom */
+          var px = outRight ? geo.width : 0;
+          var py = outDown ? geo.height : 0;
+          var tx = sc.x + (outRight ? 1 : -1) * (seatW / 2);
+          var ty = sc.y + (outDown ? 1 : -1) * (seatW / 2);
+          /* page point of local (px,py) = left + cX + (px-cX)*s + dx  → solve for dx */
+          dx = tx - left - cX - (px - cX) * s;
+          dy = ty - top - cY - (py - cY) * s;
+        }
         setTimeout(function () {
           requestAnimationFrame(function () {
             piece.style.setProperty("--fitX", dx.toFixed(1) + "px");
@@ -9372,6 +9626,7 @@
       if (els.cornerSlots) {
         els.cornerSlots.classList.remove("slots-high");
         els.cornerSlots.classList.add("slots-connector", "slots-fit");   /* slots-fit drops the upper hollows clear of the panel */
+        els.cornerSlots.classList.toggle("slots-tall", r.name === "circle");   /* circle's tall hollows clear the Next button */
       }
       var center = machineCenterInGame();   /* capture before the machine hides */
       gridBotsEnter();
@@ -9380,29 +9635,40 @@
           flyQuartersToCorners(r, center, true, function () {
             hide(els.machineStage);
             sndSuccess();
-            /* Turn the bots happy FIRST: gridBotsHappy swaps in the smaller happy
-               art, so the heads settle to their final size/position before
-               playPodConnectors freezes the wire paths to them. Drawing the wires
-               first (the old order) aimed them at the larger entering bots, so the
-               cables ended up floating above the shrunken happy heads. */
+            /* Draw the connectors against the HAPPY geometry (so they land on the
+               final crowns — alignment unchanged), then immediately revert the art
+               to SAD in this same task → no happy frame is painted. Each bot then
+               powers up the instant ITS energy lands (onBotCharged), and the
+               "Yay, the bots are charged" panel + audio play only AFTER the whole
+               circuit has charged (onAllCharged). */
             gridBotsHappy(r);
-            playPodConnectors(true);   /* wires + head plugs now land on the happy bot crowns */
-            sndCorrectCharged();
-            els.cornerSlotEls.forEach(function (slot) {
-              var c = gameSpaceCenter(slot);
-              burstCelebration(c.x, c.y);
+            playPodConnectors(true, {
+              onBotCharged: function (bot) { setBotHappy(r, bot); },
+              onAllCharged: function () {
+                sndCorrectCharged();
+                els.cornerSlotEls.forEach(function (slot) {
+                  var c = gameSpaceCenter(slot);
+                  burstCelebration(c.x, c.y);
+                });
+                var successAudio = setInstruction(SUCCESS_CHARGED_TEXT, { playThrough: true });
+                whenInstructionAudioEnds(successAudio, function () {
+                  setInstruction("", { forceAudioStop: true });
+                  state.nextAction = null;
+                  els.nextButton.classList.add("is-success");
+                  show(els.nextButton);
+                });
+              }
             });
-            var successAudio = setInstruction(SUCCESS_CHARGED_TEXT, { playThrough: true });
-            whenInstructionAudioEnds(successAudio, function () {
-              setInstruction("", { forceAudioStop: true });
-              state.nextAction = null;
-              els.nextButton.classList.add("is-success");
-              show(els.nextButton);
-            });
+            gridBotsSad(r);
           });
         } else {
+          /* A missed attempt — count it so the after-2-misses cut-line guide
+             kicks in on the next try (applyAttemptGuides, via tryAgain). */
+          state.wrongAttempts = (state.wrongAttempts || 0) + 1;
           var angles = state.gridCutAngles || [0, 90];
-          flySectorsToCornersVibrate(r, center, angles[0], angles[1], function () {
+          /* equal-misfit pieces (a quarter's area, wrong shape) sit INSIDE the
+             hollow; unequal pieces keep true scale so the excess overruns it. */
+          flySectorsToCornersVibrate(r, center, angles[0], angles[1], status === "equal-misfit", function () {
             hide(els.machineStage);
             var oops = setInstruction("Oops! The parts don't fit in the slots.");
             /* Only offer Try Again once the voice line has finished — don't cut
@@ -10421,7 +10687,7 @@
         "InstruictionTutorialLeft.webp", "InstructionTutorialRight.webp",
         "InstructionTutorialCutButton.webp",
         "nextButton.webp", "TryAgainButton.webp",
-        "LetsGoButton.webp", "PlayButton.webp"
+        "Button.webp"
       ].forEach(function (name) { preloadAsset(ASSETS + name); });
     })();
 
@@ -10485,6 +10751,7 @@
       if (els.cornerSlots) {
         els.cornerSlots.classList.remove("slots-high");
         els.cornerSlots.classList.add("slots-connector", "slots-fit");
+        els.cornerSlots.classList.toggle("slots-tall", r.name === "circle");
       }
       setupGridBots({ showBots: true, showSlots: true });
       gridBotsHappy(r);
