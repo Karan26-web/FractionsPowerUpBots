@@ -2445,7 +2445,7 @@
 
     #playButton {
       position: absolute;
-      right: 56px;
+      right: 48px;
       bottom: 68px;
       width: 190px;
       height: auto;
@@ -2508,7 +2508,7 @@
     }
 
     #playStage.start-mode #playButton {
-      left: 517px;   /* frame-centre: 640 − 0.547·225 (the round glyph sits at 0.547 of the padded art's width) */
+      left: 530px;   /* frame-centre: 640 − 0.547·225 (the round glyph sits at 0.547 of the padded art's width) */
       right: auto;
       top: 432px;
       bottom: auto;
@@ -5167,10 +5167,10 @@
       { scene: "needs", text: "Each bot needs a part of the energy block.", duration: TIMING.LONG_SCREEN },
       { scene: "halves", text: "So, we need to cut the block into four equal parts.", duration: TIMING.HALVES_DEMO_SCREEN },
       { scene: "laserIntro", text: "Use the laser to cut the block.", duration: TIMING.SHORT_SCREEN },
-      { scene: "tutorial" },
-      { scene: "preplay" },
       { scene: "cutInstruct", text: "Cut the block into four equal parts.", duration: TIMING.SHORT_SCREEN },
       { scene: "slotInstruct", text: "Make sure all parts fit into the slots.", duration: 7200 },
+      { scene: "tutorial" },
+      { scene: "preplay" },
       { scene: "laser" }
     ];
 
@@ -7993,13 +7993,18 @@
     }
     function playPodConnectors(success, opts) {
       var quiet = !!(opts && opts.quiet);   /* static alignment draw: no SFX, no beads/plugs/glow */
+      /* noEnergy: the wires still DRAW IN (the pods connect to the bots), but no
+         travelling energy beads / head-plugs / glow / charge SFX. Used by the
+         intro charge screens — the actual energy flow is reserved for the
+         success screen (when the cut pieces fit the hollows). */
+      var noEnergy = !!(opts && opts.noEnergy);
       var svg = els.podConnectors;
       if (!svg) { return; }
       svg.innerHTML = "";
       connectorWires = [];
       svg.style.transform = "translate(" + CONNECTOR_NUDGE.x + "px," + CONNECTOR_NUDGE.y + "px)";
       show(svg);
-      if (!quiet) { sndPodCharge(); }   /* electric charge SFX, timed to the wire-draw + bead travel */
+      if (!quiet && !noEnergy) { sndPodCharge(); }   /* electric charge SFX, timed to the wire-draw + bead travel */
       var ns = "http://www.w3.org/2000/svg";
       var slotByCls = {};
       els.cornerSlotEls.forEach(function (s) {
@@ -8074,7 +8079,15 @@
         var path = document.createElementNS(ns, "path");
         path.setAttribute("d", d);
         path.style.setProperty("--len", len.toFixed(0));
-        path.style.animationDelay = (0.5 + i * 0.15) + "s";   /* pods settle first, then draw with stagger */
+        if (quiet) {
+          /* Static render (the grid "ready" beat + debug alignment view): show
+             the wire already fully drawn, with no draw-on animation. The animated
+             draw-on + travelling energy belongs to the success charge only. */
+          path.style.animation = "none";
+          path.style.strokeDashoffset = "0";
+        } else {
+          path.style.animationDelay = (0.5 + i * 0.15) + "s";   /* pods settle first, then draw with stagger */
+        }
         svg.appendChild(path);
 
         /* glowing start node on the hollow's border */
@@ -8088,7 +8101,19 @@
         /* record this wire so the debug overlay can drag its head endpoint live */
         connectorWires[i] = { i: i, top: p.top, sx: sx, sy: sy, hx: hx, hy: hyv, path: path, node: node, motion: null };
 
-        if (quiet) { return; }   /* alignment view: wires only, no travelling beads */
+        if (quiet || noEnergy) {
+          /* Seat the head-plug connector on the bot's crown so the wire reads as
+             plugged in, then leave it there — but NO travelling energy bead and
+             NO charge glow (the energy flow + power-up belong to the success
+             charge alone). quiet (ready screen): wires are static, so seat at
+             once. noEnergy (plug screen): seat as the drawing wire reaches the
+             head. */
+          if (p.bot) {
+            if (quiet) { seatHeadPlug(p.bot, success); }
+            else { later(function () { seatHeadPlug(p.bot, success); }, 1500 + i * 150); }
+          }
+          return;
+        }
 
         /* travelling electricity bead — rides this exact path */
         var bead = document.createElementNS(ns, "circle");
@@ -8188,6 +8213,44 @@
       if (!state.plugConnectPlayed[plugRound]) {
         later(function () { sndPlugConnect(plugRound); }, 80);
       }
+    }
+
+    /* Grid round "ready to get charged" beat — shown after the pod/charge
+       screen. Same 4-bot + corner-pod layout, now with the instruction panel.
+       The upper hollows use slots-fit so they DROP clear of the panel: the plug
+       screen has no panel, so its uppers sit higher (plain slots-connector,
+       top:109) and would collide with the panel (bottom ≈158). The connector
+       wires recompute from the live pod centres, so they follow the drop. */
+    function setupGridReady(text) {
+      var r = currentRound();
+      els.sceneBg.style.display = "block";
+      els.bots.className = "layout-corners4";
+      [els.leftBot, els.rightBot, els.midLeftBot, els.midRightBot].forEach(function (b) {
+        b.src = r.sadBot;
+        b.className = "bot-img";
+        b.style.width = "";
+        b.style.bottom = "";
+        b.style.marginLeft = "";
+      });
+      els.cornerSlots.classList.remove("slots-high");
+      els.cornerSlots.classList.add("slots-connector", "slots-fit");   /* slots-fit drops the upper hollows clear of the panel */
+      show(els.cornerSlots);
+      /* The pods + wires were already on screen during the pod/charge beat, so
+         show them ALREADY settled here (suppress the scale-in pop) and draw the
+         wires SYNCHRONOUSLY. Drawing in the same renderStep turn as resetScene's
+         clear means no empty-connector frame is ever painted — the connectors
+         don't visibly "disappear" then redraw. */
+      els.cornerSlotEls.forEach(function (slot) {
+        slot.style.transition = "none";
+        slot.classList.add("show");
+      });
+      void els.cornerSlots.offsetWidth;   /* commit the no-transition show before restoring the transition */
+      els.cornerSlotEls.forEach(function (slot) { slot.style.transition = ""; });
+      setInstruction(text);   /* shows the panel + plays the mapped "ready to get charged" audio */
+      /* Static wires only: quiet skips the travelling energy beads AND the
+         draw-on animation (see playPodConnectors), so this reads as "still
+         connected" — the energy flow belongs to the success charge alone. */
+      playPodConnectors(false, { quiet: true });
     }
 
     function setupMoveOut() {
@@ -8408,11 +8471,13 @@
       var text = step.text ? step.text.replace("{shape}", r.name) : "";
 
       /* Backgrounds: only the bot screens use the studio room (Mainbg) + the
-         light-cone spotlight — the two charge screens (intro, plug) here, and
-         the fit screen (set in gridFitFlow, which doesn't re-run renderStep).
-         Every other screen — including the cutting screens — uses the plain
-         Bg2 gradient. The tutorial overrides this with its own bg. */
-      var isBotScreen = (step.scene === "intro" || step.scene === "plug");
+         light-cone spotlight — the charge screens (intro, plug, and the grid
+         round's "ready" beat, which continues the same charging scene) here,
+         and the fit screen (set in gridFitFlow, which doesn't re-run
+         renderStep). Every other screen — including the cutting screens — uses
+         the plain Bg2 gradient. The tutorial overrides this with its own bg. */
+      var isBotScreen = (step.scene === "intro" || step.scene === "plug" ||
+        (step.scene === "plugReady" && r.cut === "grid"));
       els.sceneBg.src = ASSETS + (isBotScreen ? "Mainbg.webp" : "Bg2.webp");
       if (els.botSpotlight) {
         if (step.scene === "intro") {
@@ -8444,15 +8509,18 @@
 
       if (step.scene === "plug") {
         setupCorners4();
-        if (r.cut === "grid") { later(playPodConnectors, 760); }
+        /* Connect the wires (they draw in) but WITHOUT the travelling energy —
+           the dot/energy flow is reserved for the success screen. */
+        if (r.cut === "grid") { later(function () { playPodConnectors(false, { noEnergy: true }); }, 760); }
       }
 
       /* Grid round keeps the 4-bot/corner layout and skips the 2-bot
-         "ready"/"move out"/"laser intro" beats — its intro is just
-         4 screens: charge → pods → whole → quarters → tutorial. */
+         "move out"/"laser intro" beats — its intro runs
+         charge → pods → ready → whole → quarters → tutorial (plugReady shows
+         the "ready to get charged" panel via the grid-specific setup). */
       if (step.scene === "plugReady") {
-        if (r.cut === "grid") { nextStep(); return; }
-        setupPlugReady(text);
+        if (r.cut === "grid") { setupGridReady(text); }
+        else { setupPlugReady(text); }
       }
 
       if (step.scene === "moveOut") {
@@ -8755,7 +8823,7 @@
     /* Vertical cut: whole tutorial block → two side-by-side halves. */
     function tutSplitHalves() {
       var r = currentRound();
-      var hw = TUT_BLOCK / 2, gap = 14;
+      var hw = TUT_BLOCK / 2, gap = 6;
       var trans = "transform 0.45s cubic-bezier(.34,1.3,.64,1)";
       var container = document.createElement("div");
       container.style.cssText = "position:relative;width:" + TUT_BLOCK + "px;height:" + TUT_BLOCK + "px;";
@@ -8782,7 +8850,7 @@
        horizontal gap opens so it reads as a single new cut. */
     function tutSplitGrid() {
       var r = currentRound();
-      var hw = TUT_BLOCK / 2, hh = TUT_BLOCK / 2, gap = 14;
+      var hw = TUT_BLOCK / 2, hh = TUT_BLOCK / 2, gap = 6;
       var trans = "transform 0.45s cubic-bezier(.34,1.3,.64,1)";
       var defs = [
         { x: 0, y: 0, tx: -gap, ty: -gap },   /* TL */
