@@ -2402,11 +2402,15 @@
 
     #iraChar {
       position: absolute;
-      width: 188px;
+      width: 236px;
       height: auto;
-      left: 268px;
-      top: 180px;
-      transform: translateX(1200px);
+      left: 244px;
+      top: 200px;
+      /* Parked off-screen right, MIRRORED. The raw clips have Ira running right
+         and pointing left; scaleX(-1) flips her to run left toward the podium and
+         point right toward the Play button. The mirror MUST stay on every
+         transform that touches #iraChar (slide-in, rest). */
+      transform: translateX(1200px) scaleX(-1);
       pointer-events: none;
       z-index: 5;
       filter: drop-shadow(0 18px 18px rgba(31, 71, 139, .18));
@@ -2627,14 +2631,16 @@
     }
 
     @keyframes iraBreath {
-
+      /* scaleX(-1) is baked into every keyframe so this never un-mirrors Ira if
+         .play-idle is enabled. (It is currently dormant — the looping IraVid2
+         clip provides her idle motion instead.) */
       0%,
       100% {
-        transform: translateX(0) translateY(0) rotate(0);
+        transform: translateX(0) translateY(0) rotate(0) scaleX(-1);
       }
 
       50% {
-        transform: translateX(0) translateY(-8px) rotate(.5deg);
+        transform: translateX(0) translateY(-8px) rotate(.5deg) scaleX(-1);
       }
     }
 
@@ -4068,7 +4074,10 @@
         <img id="playBg" src="assets/GameStartScreen.webp" alt="">
         <div id="playFx" aria-hidden="true"></div>
         <div id="iraGlowRing" aria-hidden="true"></div>
-        <img id="iraChar" src="assets/Ira.webp" alt="">
+        <video id="iraChar" muted playsinline preload="auto" aria-hidden="true">
+          <source src="assets/IraVid1.webm" type="video/webm">
+          <source src="assets/IraVid1.mp4" type="video/mp4">
+        </video>
         <button id="playButton" type="button" aria-label="Let's go">
           <img id="playButtonImg" src="assets/Button.webp" alt="Play">
         </button>
@@ -5571,6 +5580,7 @@
       els.teachContent.innerHTML = "";
       if (els.playFx) { els.playFx.innerHTML = ""; }
       els.iraChar.classList.remove("play-idle");
+      if (els.iraChar.pause) { els.iraChar.pause(); }   /* stop the Ira clip when leaving the screen (it's a <video> now) */
       els.iraGlowRing.classList.remove("show");
       els.playStage.classList.remove("play-exit", "start-mode", "preplay-mode");
       els.playButton.classList.remove("play-ready", "play-clicked");
@@ -8881,6 +8891,18 @@
       });
     }
 
+    /* Point #iraChar at one of the two Ira clips. WebM (VP9 alpha → transparent
+       cut-out) is listed first and preferred; the browser auto-falls-back to the
+       MP4 <source> if the .webm isn't present (the MP4 has no alpha, so it shows
+       its baked background — drop the .webm files in for the clean cut-out).
+       Rebuilding the <source>s + load() is the multi-format way to swap clips. */
+    function setIraClip(base) {
+      els.iraChar.innerHTML =
+        '<source src="' + ASSETS + base + '.webm" type="video/webm">' +
+        '<source src="' + ASSETS + base + '.mp4" type="video/mp4">';
+      els.iraChar.load();
+    }
+
     function setupPreplay(text) {
       state.locked = false;
       setInstruction("");
@@ -8895,14 +8917,19 @@
       els.playButton.style.opacity = "0";
       els.playButton.style.transform = "scale(0.85) translateY(16px)";
       els.iraChar.classList.remove("play-idle");
+      els.iraChar.loop = false;
+      state.iraTalking = false;   /* once-guard for Phase 2 (ended event + fallback) */
       els.iraChar.style.transition = "none";
-      els.iraChar.style.transform = "translateX(1200px)";
+      els.iraChar.style.transform = "translateX(1200px) scaleX(-1)";   /* parked off-screen right, mirrored */
       els.iraGlowRing.classList.remove("show");
       seedPlayMagic();
 
       function revealPlayButton() {
+        /* Clear the slide transition; Ira keeps her mirrored resting transform
+           (translateX(0) scaleX(-1)) and her idle motion comes from the looping
+           IraVid2 clip — so DON'T add .play-idle (its CSS breath would fight the
+           video / un-mirror her). */
         els.iraChar.style.transition = "";
-        els.iraChar.classList.add("play-idle");
         els.playButton.style.opacity = "1";
         els.playButton.style.transform = "scale(1) translateY(0)";
         els.playButton.classList.add("play-ready");
@@ -8914,17 +8941,18 @@
         if (FLOW[state.step] && FLOW[state.step].scene !== "preplay") { return; }
         show(els.playStage);
 
-        requestAnimationFrame(function () {
-          requestAnimationFrame(function () {
-            els.iraChar.style.transition = "transform 0.72s cubic-bezier(0.25, 1.1, 0.4, 1)";
-            els.iraChar.style.transform = "translateX(0)";
-            later(function () { els.iraGlowRing.classList.add("show"); }, 680);
-          });
-        });
-
-        // After Ira finishes sliding in, play "You are all set." then "Let's play.",
-        // then reveal the Play button.
-        later(function () {
+        // Phase 2 — arrival / talking: Ira stands and points (IraVid2, looping),
+        // the glow ring comes up, then the existing VO chain plays. Runs once,
+        // whichever fires first: IraVid1's "ended" event or the fallback timer.
+        function startTalking() {
+          if (state.iraTalking) { return; }
+          if (FLOW[state.step] && FLOW[state.step].scene !== "preplay") { return; }
+          state.iraTalking = true;
+          els.iraChar.onended = null;
+          els.iraChar.loop = true;
+          setIraClip("IraVid2");
+          els.iraChar.play().catch(function () {});
+          els.iraGlowRing.classList.add("show");
           var first = playInstructionAudio("You are all set.");
           whenInstructionAudioEnds(first, function () {
             var second = playInstructionAudio("Let's play.");
@@ -8932,7 +8960,23 @@
               revealPlayButton();
             });
           });
-        }, 760);
+        }
+
+        // Phase 1 — entrance: Ira runs in (IraVid1), sliding from off-screen right
+        // to her resting spot over 3.4s, KEEPING the mirror.
+        els.iraChar.loop = false;
+        setIraClip("IraVid1");
+        els.iraChar.currentTime = 0;
+        els.iraChar.play().catch(function () {});
+        els.iraChar.onended = startTalking;
+        requestAnimationFrame(function () {
+          requestAnimationFrame(function () {
+            els.iraChar.style.transition = "transform 3.4s cubic-bezier(0.22, 0.8, 0.3, 1)";
+            els.iraChar.style.transform = "translateX(0) scaleX(-1)";
+          });
+        });
+        // Fallback in case the video's "ended" event is missed.
+        later(startTalking, 3800);
       }
 
       // Wait for the new LetsPlayBG.webp to finish decoding before unhiding the
@@ -10746,7 +10790,7 @@
       [
         "Mainbg.webp", "Bg2.webp", "BgForTutorial.webp",
         "GameStartScreen.webp", "LetsPlayBg.webp",
-        "instructionPannel.webp", "Ira.webp",
+        "instructionPannel.webp",
         "LaserMachineWithoutLines.webp", "LaserMachine.svg", "Beam.svg",
         "Laser.webp", "laserlight.webp",
         "LeftButton.webp", "RightButton.webp", "CutButton.webp",
@@ -10757,6 +10801,20 @@
         "nextButton.webp", "TryAgainButton.webp",
         "Button.webp"
       ].forEach(function (name) { preloadAsset(ASSETS + name); });
+      /* Warm the two Ira clips so the Let's-Play entrance has no load hitch.
+         A detached <video> with preload="auto" pulls the data into cache; we
+         keep a hard reference so it isn't evicted before the preplay screen.
+         Both formats are listed — whichever is present warms; a missing one just
+         fails its fetch harmlessly (the on-screen element falls back the same way). */
+      ["IraVid1.webm", "IraVid1.mp4", "IraVid2.webm", "IraVid2.mp4"].forEach(function (name) {
+        var src = ASSETS + name;
+        if (_assetCache[src]) { return; }
+        var v = document.createElement("video");
+        v.muted = true;
+        v.preload = "auto";
+        v.src = src;
+        _assetCache[src] = v;
+      });
     })();
 
     /* Preload every round's pod, bot and block PNGs at startup. Without
