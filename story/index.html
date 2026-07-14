@@ -2521,20 +2521,23 @@
     }
 
     #playStage.preplay-mode #playButton {
-      left: 700px;            /* right-of-centre, clear of Ira */
+      /* play.png is full-bleed square art (no padding, unlike Button.webp), so
+         the box IS the glyph: 110px wide, centred on the old glyph spot (804, 360). */
+      left: 749px;            /* right-of-centre, clear of Ira: 804 − 110/2 */
       right: auto;
-      top: 285px;             /* glyph centred on the frame mid (640×360 space): 360 − 0.533·145 */
+      top: 307px;             /* glyph centred on the frame mid: 360 − ~107/2 */
       bottom: auto;
-      width: 190px;
+      width: 110px;
       height: auto;
       border-radius: 0;
       transform-origin: center center;
     }
 
     #playStage.preplay-mode #playButton::before {
+      /* cool halo matched to the blue play.png glyph */
       inset: -16px -22px;
       border-radius: 36px;
-      background: radial-gradient(ellipse, rgba(255, 210, 48, .44) 0 18%, rgba(255, 149, 0, .28) 42%, rgba(77, 202, 255, .12) 64%, transparent 80%);
+      background: radial-gradient(ellipse, rgba(120, 214, 255, .44) 0 18%, rgba(46, 138, 255, .28) 42%, rgba(77, 202, 255, .12) 64%, transparent 80%);
       filter: blur(13px);
     }
 
@@ -2546,7 +2549,7 @@
 
     #playStage.preplay-mode #playButton.play-ready:hover {
       transform: scale(1.1) translateY(-6px);
-      filter: drop-shadow(0 0 18px rgba(255, 198, 84, .9)) drop-shadow(0 8px 14px rgba(210, 120, 0, .35));
+      filter: drop-shadow(0 0 18px rgba(96, 196, 255, .9)) drop-shadow(0 8px 14px rgba(0, 84, 200, .35));
     }
 
     #playButton.play-ready {
@@ -2632,8 +2635,8 @@
 
     @keyframes iraBreath {
       /* scaleX(-1) is baked into every keyframe so this never un-mirrors Ira if
-         .play-idle is enabled. (It is currently dormant — the looping IraVid2
-         clip provides her idle motion instead.) */
+         .play-idle is enabled. (It is currently dormant — the IraVid2 clip
+         plays once and Ira rests on its final frame instead.) */
       0%,
       100% {
         transform: translateX(0) translateY(0) rotate(0) scaleX(-1);
@@ -3384,32 +3387,68 @@
     .tutorial-bubble {
       position: absolute;
       z-index: 31;
-      object-fit: contain;
+      background-repeat: no-repeat;
+      background-size: 100% 100%;
       filter: drop-shadow(0 8px 12px rgba(44, 92, 139, .22));
       transition: opacity .3s ease, transform .3s ease;
       pointer-events: none;
     }
 
-    /* bubbles below left/right buttons; cut bubble above cut button */
+    /* Live label, in the game's regular text style (#instructionText), centred
+       inside each panel's body rect (each panel reserves room for its tail). */
+    .tutorial-bubble .tb-text {
+      position: absolute;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #154aa5;
+      font-size: 26px;
+      line-height: 1.14;
+      font-weight: 700;   /* bold — Trebuchet has no semibold face, and 900 rendered too heavy */
+    }
+
+    /* bubbles below left/right buttons; cut bubble above cut button.
+       Heights follow each SVG's aspect ratio at the kept 230/240px widths.
+       Tail tips: TapPanel 62% across, rightpanel 35% (mirrored) — offsets keep
+       each tip on its button's centre (x≈106 / x≈794). Both panels' body rects
+       start below the 70-unit tail strip → the label insets from the top. */
     #bubbleLeft {
-      width: 270px;
-      left: -70px;
-      top: 402px
+      width: 230px;
+      height: 144px;   /* 230 × 296/473 */
+      left: -37px;
+      top: 402px;
+      background-image: url("assets/TapPanel.svg");
+    }
+
+    #bubbleLeft .tb-text {
+      inset: 34px 0 0 0;   /* body starts at 70/296 of the height */
     }
 
     #bubbleRight {
-      width: 270px;
-      right: -70px;
-      top: 402px
+      width: 230px;
+      height: 109px;   /* 230 × 224/473 */
+      right: -44px;
+      top: 402px;
+      background-image: url("assets/rightpanel.svg");
+    }
+
+    #bubbleRight .tb-text {
+      inset: 34px 0 0 0;   /* body starts at 70/224 of the height */
     }
 
     /* Sits flush to the right of the Cut button (Cut spans x:382-518 in the machine stage);
-       the bubble's tail is on its left edge so it points back at the button.
-       Top chosen so the tail tip lines up with the button's vertical centre. */
+       the panel's tail is on its left edge so it points back at the button.
+       Top chosen so the tail tip lines up with the button's vertical centre (y≈654). */
     #bubbleCut {
-      width: 280px;
+      width: 240px;
+      height: 78px;    /* 240 × 172/532 */
       left: 545px;
-      top: 595px
+      top: 614px;
+      background-image: url("assets/cutPanelsvg.svg");
+    }
+
+    #bubbleCut .tb-text {
+      inset: 0 0 0 28px;   /* body starts right of the 63/532 tail strip */
     }
 
     .tutorial-bubble.fade {
@@ -3792,6 +3831,16 @@
       pointer-events: none;
     }
 
+    /* Round-win burst sits at #game level, so it needs to clear the fit screen's
+       layers (machineStage/flightLayer z:50-55) to rain over the whole scene. */
+    #winConfetti {
+      z-index: 60;
+    }
+
+    #winConfetti.hidden {
+      display: none;
+    }
+
     .complete-confetti span {
       position: absolute;
       left: var(--x);
@@ -4112,10 +4161,12 @@
         <img id="laserBurst" src="assets/laserlight.webp" alt="">
         <div id="cutLine"></div>
         <div id="wrongSlash"></div>
-        <!-- Tutorial instruction bubbles (below left/right buttons; above cut button) -->
-        <img id="bubbleLeft" class="tutorial-bubble" src="assets/InstruictionTutorialLeft.webp" alt="">
-        <img id="bubbleRight" class="tutorial-bubble" src="assets/InstructionTutorialRight.webp" alt="">
-        <img id="bubbleCut" class="tutorial-bubble" src="assets/InstructionTutorialCutButton.webp" alt="">
+        <!-- Tutorial instruction bubbles (below left/right buttons; above cut button).
+             The panel SVGs are empty speech boxes — the label is live text so it
+             always matches the game's regular text style. -->
+        <div id="bubbleLeft" class="tutorial-bubble"><span class="tb-text">Tap to move</span></div>
+        <div id="bubbleRight" class="tutorial-bubble"><span class="tb-text">Tap to move</span></div>
+        <div id="bubbleCut" class="tutorial-bubble"><span class="tb-text">Tap to cut</span></div>
         <!-- Visible button images (src swaps on press) -->
         <img id="btnLeft" src="assets/LeftButton.webp" alt="" aria-hidden="true">
         <img id="btnRight" src="assets/RightButton.webp" alt="" aria-hidden="true">
@@ -4132,6 +4183,9 @@
       </div>
 
       <div id="flightLayer" aria-hidden="true"></div>
+      <!-- Round-win confetti burst (same look as the end-screen confetti; bits
+           are generated by celebrateWin() and cleared after the burst) -->
+      <div id="winConfetti" class="complete-confetti hidden" aria-hidden="true"></div>
 
       <button id="tryAgain" class="hidden" type="button" aria-label="Try again">
         <img src="assets/TryAgainButton.webp" alt="">
@@ -4215,13 +4269,14 @@
     var ASSETS = "assets/";
 
     var TIMING = {
-      SHORT_SCREEN: 3800,
-      LONG_SCREEN: 5400,
+      SHORT_SCREEN: 6000,  /* slowed for lower-grade learners: narration + a long quiet beat to absorb */
+      LONG_SCREEN: 8000,   /* slowed for lower-grade learners: split demo + a long quiet beat to absorb */
       PREPLAY_SCREEN: 4000,
       PLUG_SCREEN: 5200,   /* let the wire-draw + plug connect + energy beads (finish ~3.8s) settle with a beat */
       READY_TEXT_SCREEN: 3300,
       CHARGE_BEAM_IN: 550,    /* hold on the bots-only beat before the light-cone flashes on */
-      INTRO_SCREEN: 6500,     /* lead-in + beam flash + flashlight cue, then the panel/voice, then a held beat */
+      INTRO_SCREEN: 7100,     /* lead-in + beam flash + flashlight cue + text delay, then the panel/voice, then a held beat */
+      INTRO_TEXT_DELAY: 600,  /* breath between the torch light landing and the "Let us charge the bots." panel */
       MOVE_SCREEN: 1500,
       HALVES_DEMO_SCREEN: 12500,
       TEACH_WHOLE_IN: 150,
@@ -4705,6 +4760,18 @@
         }
         _confettiAudio.currentTime = 0;
         var p = _confettiAudio.play();
+        if (p && typeof p.catch === "function") { p.catch(function () {}); }
+      } catch (e) {}
+    }
+    var _clapAudio = null;
+    function sndClap() {
+      try {
+        if (!_clapAudio) {
+          _clapAudio = new Audio("audios/clapSound.ogg");
+          _clapAudio.preload = "auto";
+        }
+        _clapAudio.currentTime = 0;
+        var p = _clapAudio.play();
         if (p && typeof p.catch === "function") { p.catch(function () {}); }
       } catch (e) {}
     }
@@ -5264,6 +5331,7 @@
       nextButton: document.getElementById("nextButton"),
       completeStage: document.getElementById("completeStage"),
       completeConfetti: document.getElementById("completeConfetti"),
+      winConfetti: document.getElementById("winConfetti"),
       finishButton: document.getElementById("finishButton")
     };
 
@@ -5502,7 +5570,9 @@
     function playChargeBeam() {
       if (!els.botSpotlight) { return; }
       els.botSpotlight.classList.add("show", "charge-flash");
-      sndChargeBeam(revealIntroInstruction);   /* raise the panel only after the cue ends */
+      /* raise the panel only after the cue ends, plus a breath so the light
+         lands first and THEN the text arrives */
+      sndChargeBeam(function () { later(revealIntroInstruction, TIMING.INTRO_TEXT_DELAY); });
     }
 
     function revealIntroInstruction() {
@@ -5571,6 +5641,10 @@
       hide(els.playStage);
       hide(els.machineStage);
       hide(els.tryAgain);
+      if (els.winConfetti) {
+        hide(els.winConfetti);
+        els.winConfetti.innerHTML = "";
+      }
       hide(els.nextButton);
       els.nextButton.classList.remove("is-success");
       els.nextButton.querySelector("img").src = "assets/nextButton.webp";
@@ -8015,6 +8089,13 @@
       svg.style.transform = "translate(" + CONNECTOR_NUDGE.x + "px," + CONNECTOR_NUDGE.y + "px)";
       show(svg);
       if (!quiet && !noEnergy) { sndPodCharge(); }   /* electric charge SFX, timed to the wire-draw + bead travel */
+      if (!quiet && noEnergy) {
+        /* Plug screen: the charge SFX stays reserved for the success screen, but
+           the wires still audibly PLUG IN — fire PlugConnect as the first wire
+           seats its head-plug (matches the 1500ms seat delay below). */
+        var plugSfxRound = state.round;
+        later(function () { sndPlugConnect(plugSfxRound); }, 1500);
+      }
       var ns = "http://www.w3.org/2000/svg";
       var slotByCls = {};
       els.cornerSlotEls.forEach(function (s) {
@@ -8908,7 +8989,7 @@
       setInstruction("");
       setupBots("layout-clear");
       els.playBg.src = ASSETS + "LetsPlayBg.webp";
-      els.playButtonImg.src = ASSETS + "Button.webp";
+      els.playButtonImg.src = ASSETS + "play.png";   /* dedicated play glyph — the start screen keeps Button.webp */
       els.playButtonImg.alt = "Play";
       els.playButton.setAttribute("aria-label", "Play");
       els.playStage.classList.add("preplay-mode");
@@ -8926,9 +9007,9 @@
 
       function revealPlayButton() {
         /* Clear the slide transition; Ira keeps her mirrored resting transform
-           (translateX(0) scaleX(-1)) and her idle motion comes from the looping
-           IraVid2 clip — so DON'T add .play-idle (its CSS breath would fight the
-           video / un-mirror her). */
+           (translateX(0) scaleX(-1)) and rests on IraVid2's final frame — so
+           DON'T add .play-idle (its CSS breath would fight the video /
+           un-mirror her). */
         els.iraChar.style.transition = "";
         els.playButton.style.opacity = "1";
         els.playButton.style.transform = "scale(1) translateY(0)";
@@ -8941,15 +9022,16 @@
         if (FLOW[state.step] && FLOW[state.step].scene !== "preplay") { return; }
         show(els.playStage);
 
-        // Phase 2 — arrival / talking: Ira stands and points (IraVid2, looping),
-        // the glow ring comes up, then the existing VO chain plays. Runs once,
-        // whichever fires first: IraVid1's "ended" event or the fallback timer.
+        // Phase 2 — arrival / talking: Ira stands and points (IraVid2, played
+        // ONCE — it rests on its final frame rather than looping), the glow ring
+        // comes up, then the existing VO chain plays. Runs once, whichever fires
+        // first: the arrival timer or IraVid1's "ended" event.
         function startTalking() {
           if (state.iraTalking) { return; }
           if (FLOW[state.step] && FLOW[state.step].scene !== "preplay") { return; }
           state.iraTalking = true;
           els.iraChar.onended = null;
-          els.iraChar.loop = true;
+          els.iraChar.loop = false;
           setIraClip("IraVid2");
           els.iraChar.play().catch(function () {});
           els.iraGlowRing.classList.add("show");
@@ -8975,8 +9057,10 @@
             els.iraChar.style.transform = "translateX(0) scaleX(-1)";
           });
         });
-        // Fallback in case the video's "ended" event is missed.
-        later(startTalking, 3800);
+        // Trim the run at slide-arrival (the transform lands at 3.4s): switch to
+        // the talking clip the moment Ira stops moving, so she never runs in
+        // place. Also doubles as the fallback if the "ended" event is missed.
+        later(startTalking, 3400);
       }
 
       // Wait for the new LetsPlayBG.webp to finish decoding before unhiding the
@@ -9758,6 +9842,7 @@
               onBotCharged: function (bot) { setBotHappy(r, bot); },
               onAllCharged: function () {
                 sndCorrectCharged();
+                celebrateWin();
                 els.cornerSlotEls.forEach(function (slot) {
                   var c = gameSpaceCenter(slot);
                   burstCelebration(c.x, c.y);
@@ -10365,6 +10450,7 @@
             switchBotsToHappy(r);
             addChargingPulses();
             sndCorrectCharged();
+            celebrateWin();
             setInstruction("");
 
             var tgts = slotTargetsFromFills();
@@ -10641,16 +10727,24 @@
       state.round++;
       state.step = 0;
       if (state.round >= ROUNDS.length) {
-        completeGame();
+        /* Final round done. The "Bots Powered Up!" end screen is retired —
+           tell the host the activity is complete, then restart from the top. */
+        try {
+          parent.postMessage({ type: "activity_complete" }, "*");
+        } catch (e) { }
+        restartGame();
         return;
       }
       renderStep();
     }
 
-    function renderCompleteConfetti() {
-      if (!els.completeConfetti) { return; }
+    /* Confetti-bit generator: fills a .complete-confetti container with
+       randomized falling bits. maxDelay staggers the drop — the round-win
+       burst uses a tight stagger so it reads as one celebratory pop. */
+    function renderConfettiBits(container, maxDelay) {
+      if (!container) { return; }
       var colors = ["#4dbeff", "#9b5fd9", "#78dc2d", "#ffcf3b", "#ff6b8b", "#56e8ff"];
-      els.completeConfetti.innerHTML = "";
+      container.innerHTML = "";
       for (var i = 0; i < 72; i++) {
         var bit = document.createElement("span");
         var x = 4 + Math.random() * 92;
@@ -10662,7 +10756,7 @@
         var rotation = -60 + Math.random() * 120;
         var spin = 260 + Math.random() * 520;
         var duration = 2.7 + Math.random() * 1.8;
-        var delay = Math.random() * 1.8;
+        var delay = Math.random() * (maxDelay || 1.8);
         bit.style.setProperty("--x", x.toFixed(1) + "%");
         bit.style.setProperty("--y", y.toFixed(1) + "px");
         bit.style.setProperty("--dx", dx.toFixed(1) + "px");
@@ -10674,28 +10768,31 @@
         bit.style.setProperty("--dur", duration.toFixed(2) + "s");
         bit.style.setProperty("--d", delay.toFixed(2) + "s");
         bit.style.setProperty("--c", colors[i % colors.length]);
-        els.completeConfetti.appendChild(bit);
+        container.appendChild(bit);
       }
     }
 
-    function completeGame() {
-      resetScene();
-      setInstruction("");
-      renderCompleteConfetti();
-      show(els.completeStage);
+    /* Correct-answer celebration: claps + the confetti SFX, and a full-screen
+       confetti burst matching the end-screen look. The end screen's confetti
+       loops forever; this one clears itself once the last bit has fallen
+       (~0.9s stagger + 4.5s max fall). */
+    function celebrateWin() {
+      sndClap();
       sndConfetti();
-      sndKidsCheer();
-      try {
-        parent.postMessage({ type: "activity_complete" }, "*");
-      } catch (e) { }
+      if (!els.winConfetti) { return; }
+      renderConfettiBits(els.winConfetti, 0.9);
+      show(els.winConfetti);
+      later(function () {
+        hide(els.winConfetti);
+        els.winConfetti.innerHTML = "";
+      }, 5400);
     }
 
-    function finishGame() {
+    function restartGame() {
       state.round = 0;
       state.step = 0;
       state.plugConnectPlayed = {};
-      hide(els.completeStage);
-      renderStep();
+      renderStep();   /* renderStep's resetScene hides every stage, completeStage included */
     }
 
     function burstCelebration(cx, cy) {
@@ -10757,7 +10854,6 @@
     });
     els.tryAgain.addEventListener("click", function () { sndTap(); tryAgain(); });
     els.nextButton.addEventListener("click", handleNextButton);
-    els.finishButton.addEventListener("click", function () { sndTap(); finishGame(); });
 
     /* ── Critical-asset warm cache ──────────────────────────────────────────
        Every screen background and UI sprite is preloaded AND decoded at
@@ -10796,8 +10892,8 @@
         "LeftButton.webp", "RightButton.webp", "CutButton.webp",
         "LeftButtonClicked.webp", "RightButtonClicked.webp", "ClickedCutButton.webp",
         "TappedCutButton.webp",
-        "InstruictionTutorialLeft.webp", "InstructionTutorialRight.webp",
-        "InstructionTutorialCutButton.webp",
+        "TapPanel.svg", "rightpanel.svg",
+        "cutPanelsvg.svg",
         "nextButton.webp", "TryAgainButton.webp",
         "Button.webp"
       ].forEach(function (name) { preloadAsset(ASSETS + name); });
