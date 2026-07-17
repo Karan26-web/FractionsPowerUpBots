@@ -3004,6 +3004,14 @@
       transform: translate(-50%, -50%) scale(0.82);
     }
 
+    /* Grid rounds' laser reveal: shrink + lower the machine so the ring clears
+       the instruction panel (panel bottom ≈ y183) while the cut button stays
+       inside the frame. */
+    #game.laser-intro-grid #machineStage {
+      top: 435px;
+      transform: translate(-50%, -50%) scale(0.78);
+    }
+
     #machineImg {
       position: absolute;
       left: 50%;
@@ -3115,6 +3123,24 @@
       pointer-events: none;
       z-index: 7;
       display: none;
+    }
+
+    /* Laser-intro spotlight: pulsing cyan halo on the laser head. Filter-only —
+       positionLaser owns the element's inline transform. */
+    #laserImg.laser-spotlight {
+      animation: laserSpotlightPulse 1.1s ease-in-out infinite;
+    }
+
+    @keyframes laserSpotlightPulse {
+
+      0%,
+      100% {
+        filter: drop-shadow(0 0 6px rgba(47, 255, 255, .75)) drop-shadow(0 0 14px rgba(47, 255, 255, .45));
+      }
+
+      50% {
+        filter: drop-shadow(0 0 12px rgba(47, 255, 255, 1)) drop-shadow(0 0 26px rgba(47, 255, 255, .7));
+      }
     }
 
     /* ── Beam.svg — only shown on CUT ── */
@@ -3865,6 +3891,102 @@
       }
     }
 
+    #completeStage {
+      position: absolute;
+      inset: 0;
+      z-index: 60;
+      overflow: hidden;
+      isolation: isolate;
+      background-color: #e6f0ff;
+      background:
+        radial-gradient(circle at 50% 40%, #ffffff 0 13%, #e5efff 35%, #c5daff 100%),
+        linear-gradient(180deg, #e6f0ff 0%, #dbeaff 100%);
+      transition: opacity .35s ease;
+    }
+
+    #completeStage::before {
+      content: "";
+      position: absolute;
+      inset: -110px -180px -60px;
+      background: repeating-conic-gradient(from -10deg at 50% 32%,
+          rgba(255, 255, 255, .5) 0deg,
+          rgba(255, 255, 255, .5) 8deg,
+          rgba(170, 201, 255, .2) 8deg,
+          rgba(170, 201, 255, .2) 18deg);
+      opacity: .74;
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    #completeStage::after {
+      content: "";
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 58px;
+      height: 31px;
+      background: rgba(86, 150, 244, .55);
+      box-shadow: 0 -1px 0 rgba(255, 255, 255, .46), 0 6px 16px rgba(77, 136, 221, .2);
+      z-index: 1;
+    }
+
+    .complete-copy {
+      position: absolute;
+      left: 50%;
+      top: 54px;
+      width: 640px;
+      transform: translateX(-50%);
+      text-align: center;
+      color: #10295d;
+      font-weight: 900;
+      z-index: 6;
+      text-shadow: 0 3px 0 rgba(255, 255, 255, .76), 0 6px 13px rgba(20, 50, 104, .16);
+    }
+
+    .complete-title {
+      font-size: 56px;
+      line-height: 1.04;
+      letter-spacing: 0;
+    }
+
+    .complete-sub {
+      margin-top: 12px;
+      font-size: 32px;
+      line-height: 1.1;
+      color: #10295d;
+    }
+
+    .complete-bots {
+      position: absolute;
+      left: 50%;
+      bottom: 80px;
+      width: 940px;
+      height: 392px;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      transform: translateX(-50%);
+      z-index: 3;
+    }
+
+    .complete-bot {
+      position: relative;
+      width: 260px;
+      height: 372px;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+    }
+
+    .complete-bot-img {
+      display: block;
+      width: var(--bot-w);
+      height: auto;
+      object-fit: contain;
+      filter: drop-shadow(0 16px 20px rgba(63, 96, 151, .2)) drop-shadow(0 0 22px rgba(86, 229, 255, .56));
+      animation: completeBotBounce 1.6s ease-in-out infinite;
+    }
+
     .complete-confetti {
       position: absolute;
       inset: 0;
@@ -3895,6 +4017,31 @@
       transform: translate3d(0, -80px, 0) rotate(var(--r));
       animation: completeConfettiFall var(--dur, 3.4s) linear infinite;
       animation-delay: var(--d);
+    }
+
+    .complete-ground-shadow {
+      position: absolute;
+      left: 50%;
+      bottom: -2px;
+      width: 150px;
+      height: 18px;
+      border-radius: 50%;
+      transform: translateX(-50%);
+      background: rgba(47, 85, 144, .16);
+      filter: blur(3px);
+      z-index: -1;
+    }
+
+    @keyframes completeBotBounce {
+
+      0%,
+      100% {
+        transform: translateY(0) rotate(0)
+      }
+
+      50% {
+        transform: translateY(-10px) rotate(1.2deg)
+      }
     }
 
     @keyframes completeConfettiFall {
@@ -4234,6 +4381,30 @@
       </button>
     </section>
 
+
+    <section id="completeStage" class="hidden" aria-live="polite">
+      <div class="complete-copy">
+        <div class="complete-title">Bots Powered Up!</div>
+      </div>
+      <div id="completeConfetti" class="complete-confetti" aria-hidden="true">
+        <span style="--x:8%;--y:17%;--c:#4dbeff;--r:24deg;--d:.1s"></span>
+        <span style="--x:15%;--y:31%;--c:#9b5fd9;--r:-38deg;--d:.7s"></span>
+        <span style="--x:23%;--y:24%;--c:#78dc2d;--r:-24deg;--d:.2s"></span>
+        <span style="--x:10%;--y:48%;--c:#78dc2d;--r:34deg;--d:1s"></span>
+        <span style="--x:21%;--y:61%;--c:#9b5fd9;--r:31deg;--d:.4s"></span>
+        <span style="--x:74%;--y:19%;--c:#9b5fd9;--r:-18deg;--d:.6s"></span>
+        <span style="--x:84%;--y:30%;--c:#78dc2d;--r:18deg;--d:.2s"></span>
+        <span style="--x:69%;--y:42%;--c:#4dbeff;--r:30deg;--d:.8s"></span>
+        <span style="--x:79%;--y:57%;--c:#78dc2d;--r:-31deg;--d:.5s"></span>
+        <span style="--x:62%;--y:63%;--c:#68c7ff;--r:48deg;--d:1.1s"></span>
+      </div>
+      <div class="complete-bots" aria-hidden="true">
+        <div class="complete-bot">
+          <img class="complete-bot-img" style="--bot-w:190px" src="assets/happyPinkBot.webp" alt="">
+          <div class="complete-ground-shadow"></div>
+        </div>
+      </div>
+    </section>
 
     <!-- Lab-gate intro: two sliding doors (one full gate image split across two
          50% halves) that part from dead-centre to reveal the first screen.
@@ -5075,7 +5246,7 @@
         /* Per-corner seat calibration [tl, tr, bl, br]: seat centre minus
            (slot centre + TRI_SEAT_NUDGE) from the hand-tuned
            layout_triangle1_laser (3) export, composed by triSeatNudgeFor. */
-        triSeatNudge: [{ x: 0.7, y: -0.4 }, { x: 1.4, y: -0.6 }, { x: 0, y: 0.1 }, { x: -1.4, y: -1 }],
+        triSeatNudge: [{ x: 0.7, y: -0.4 }, { x: 1.4, y: -0.6 }, { x: 0, y: 0.1 }, { x: -0.4, y: -0.3 }],
         blockSrc: "",
         blockColor: "#FFB35C",
         blockW: 200,
@@ -5153,6 +5324,10 @@
         slotFill: { w: 0.76, h: 0.76 },
         squareSeat: true,
         slotNudge: { x: 0, y: 0 },
+        /* Per-corner cavity offsets [tl,tr,bl,br] — the quarter hollow art is
+           rotated per corner, so each cavity sits slightly differently. From
+           the layout_circle_laser export. */
+        seatNudge: [{ x: -3, y: -1 }, { x: 0, y: -2 }, { x: -1, y: 2 }, { x: 2, y: 1 }],
         podW: 132,
         botAspect: 894 / 606,
         podAspectLeft: 1056 / 444,
@@ -5185,8 +5360,8 @@
       { scene: "quarters", text: "We need to cut the block into four equal parts.", duration: TIMING.LONG_SCREEN },
       { scene: "needs", text: "Each bot needs a part of the energy block.", duration: TIMING.LONG_SCREEN },
       { scene: "halves", text: "So, we need to cut the block into four equal parts.", duration: TIMING.HALVES_DEMO_SCREEN },
-      { scene: "laserIntro", text: "Use the laser to cut the block.", duration: TIMING.SHORT_SCREEN },
       { scene: "slotPreview", text: "Make sure all parts fit into the slots.", duration: 7200 },
+      { scene: "laserIntro", text: "Use the laser to cut the block.", duration: TIMING.SHORT_SCREEN },
       { scene: "tutorial" },
       { scene: "preplay" },
       { scene: "cutInstruct", text: "Cut the block into four equal parts.", duration: TIMING.SHORT_SCREEN },
@@ -5274,6 +5449,8 @@
       flightLayer: document.getElementById("flightLayer"),
       tryAgain: document.getElementById("tryAgain"),
       nextButton: document.getElementById("nextButton"),
+      completeStage: document.getElementById("completeStage"),
+      completeConfetti: document.getElementById("completeConfetti"),
       winConfetti: document.getElementById("winConfetti")
     };
 
@@ -5536,7 +5713,7 @@
       if (els.botSpotlight) { els.botSpotlight.classList.remove("show", "charge-flash"); }
       if (els.focusDim) { els.focusDim.classList.remove("show"); }
       state.teachingActive = false;
-      els.game.classList.remove("teaching-active", "laser-intro");
+      els.game.classList.remove("teaching-active", "laser-intro", "laser-intro-grid");
       /* Clear inline transitions/transforms left over by the previous round's
          success animation (switchBotsToHappy sets `transition: top 0.4s ease,
          margin-left 0.4s ease` on pods/fills and `bottom` on bots). Without
@@ -5594,6 +5771,7 @@
       hide(els.nextButton);
       els.nextButton.classList.remove("is-success");
       els.nextButton.querySelector("img").src = "assets/nextButton.webp";
+      hide(els.completeStage);
       if (els.clueCard) { els.clueCard.classList.add("hidden"); }
       state.nextAction = null;
       els.shapeStage.innerHTML = "";
@@ -5621,6 +5799,7 @@
       if (state.previewRaf) { cancelAnimationFrame(state.previewRaf); state.previewRaf = null; }
       state.orbitActive = false;
       els.laserImg.style.display = "none";
+      els.laserImg.classList.remove("laser-spotlight");
       els.beamImg.style.display = "none";
       els.laserBurst.classList.remove("show");
       [els.bubbleLeft, els.bubbleRight, els.bubbleCut].forEach(function (el) {
@@ -6849,6 +7028,13 @@
       var base = (!r.diamondHollows && TRI_SEAT_NUDGE[i]) ? TRI_SEAT_NUDGE[i] : { x: 0, y: 0 };
       var own = (r.triSeatNudge && r.triSeatNudge[i]) || { x: 0, y: 0 };
       return { x: base.x + own.x, y: base.y + own.y };
+    }
+
+    /* Per-corner seat offset for BOX rounds (from a layout-overlay export),
+       added on top of the round-wide slotNudge — the per-corner rotated
+       quarter hollows' cavities don't all sit at the same offset. */
+    function boxSeatNudgeFor(r, i) {
+      return (r.seatNudge && r.seatNudge[i]) || { x: 0, y: 0 };
     }
     function makeCornerTriangle(r, cornerIdx, w, h, t) {
       var d = document.createElement("div");
@@ -8426,7 +8612,8 @@
             seatX = seatY = 94 / Math.max(g.width, g.height);
           }
           addSlotPathGuide(pcx, pcy, ctrlX, ctrlY, slot.x, slot.y, i);
-          anims.push({ piece: piece, sx: pcx, sy: pcy, cx2: ctrlX, cy2: ctrlY, ex: slot.x + nudgeX, ey: slot.y + nudgeY, seatX: seatX, seatY: seatY });
+          var bn = boxSeatNudgeFor(r, i);
+          anims.push({ piece: piece, sx: pcx, sy: pcy, cx2: ctrlX, cy2: ctrlY, ex: slot.x + nudgeX + bn.x, ey: slot.y + nudgeY + bn.y, seatX: seatX, seatY: seatY });
         });
       }
 
@@ -8822,8 +9009,8 @@
       }
 
       if (step.scene === "laserIntro") {
-        if (r.cut === "grid") { nextStep(); return; }
-        setupLaserIntro(text);
+        if (r.cut === "grid") { setupGridLaserIntro(text); }
+        else { setupLaserIntro(text); }
       }
 
       if (step.scene === "cutInstruct") {
@@ -9007,6 +9194,9 @@
       pressButton(els.hitCut);
       sndCut();
       [els.bubbleLeft, els.bubbleRight, els.bubbleCut].forEach(function (el) { el.classList.add("fade"); });
+      /* Stop the prompt pulse the moment the cut fires — after the FINAL cut no
+         tutSetStep follows to clear it, so it kept pulsating over the result. */
+      [els.btnLeft, els.btnRight, els.btnCut].forEach(function (b) { b.classList.remove("tut-highlight"); });
       els.cutOverlay.classList.remove("show");
       els.hitLeft.disabled = true;
       els.hitRight.disabled = true;
@@ -9226,6 +9416,42 @@
       state.orbitActive = true;
       snapLaser(r.startAngle);
       showLaserHead();
+      [els.bubbleLeft, els.bubbleRight, els.bubbleCut].forEach(function (el) {
+        el.classList.add("fade");
+      });
+      show(els.machineStage);
+    }
+
+    /* Grid rounds' laser reveal — the beat right before the tutorial: the same
+       dimmed background + four hollows as the other pre-tutorial screens, the
+       laser machine centred with the block loaded, and a pulsing spotlight on
+       the laser head so the tool being introduced is what draws the eye. */
+    function setupGridLaserIntro(text) {
+      var r = currentRound();
+      els.game.classList.add("laser-intro-grid");   /* compact machine — clears the instruction panel */
+      els.sceneBg.style.display = "block";
+      els.focusDim.classList.add("show");   /* dim bg, spotlight the machine */
+      setupGridBots({ showBots: false, showSlots: true });
+      setInstruction(text);
+      state.angle = r.startAngle;
+      state.locked = true;
+      els.tutorialOverlay.classList.remove("show", "supportive-guide");
+      els.machineBlock.innerHTML = "";
+      els.machineBlock.appendChild(makeBlock(r, r.blockW, r.blockH));
+      els.machineBlock.style.transform = "";
+      els.blockCover.style.width = (r.blockW + 22) + "px";
+      els.blockCover.style.height = (r.blockH + 22) + "px";
+      els.blockCover.style.borderRadius = (r.name === "circle" ? "50%" : "18px");
+      els.blockCover.style.opacity = "1";
+      els.blockCover.style.transform = "";
+      els.cutLine.style.width = (r.blockW + 12) + "px";
+      els.cutLine.style.height = (r.blockH + 12) + "px";
+      els.cutLine.style.borderRadius = (r.name === "circle" ? "50%" : "0");
+      els.cutLine.classList.remove("show");
+      state.orbitActive = true;
+      snapLaser(r.startAngle);
+      showLaserHead();
+      els.laserImg.classList.add("laser-spotlight");
       [els.bubbleLeft, els.bubbleRight, els.bubbleCut].forEach(function (el) {
         el.classList.add("fade");
       });
@@ -9841,7 +10067,8 @@
           } else {
             sX = sY = (sc.w * INNER) / hw;
           }
-          var dx = sc.x - qcx + nudgeX, dy = sc.y - qcy + nudgeY;
+          var bn = boxSeatNudgeFor(r, i);
+          var dx = sc.x - qcx + nudgeX + bn.x, dy = sc.y - qcy + nudgeY + bn.y;
           setTimeout(function () {
             requestAnimationFrame(function () {
               if (success) {
@@ -10906,12 +11133,7 @@
       state.round++;
       state.step = 0;
       if (state.round >= ROUNDS.length) {
-        /* Final round done. The "Bots Powered Up!" end screen is retired —
-           tell the host the activity is complete, then restart from the top. */
-        try {
-          parent.postMessage({ type: "activity_complete" }, "*");
-        } catch (e) { }
-        restartGame();
+        completeGame();
         return;
       }
       renderStep();
@@ -10967,11 +11189,19 @@
       }, 5400);
     }
 
-    function restartGame() {
-      state.round = 0;
-      state.step = 0;
-      state.plugConnectPlayed = {};
-      renderStep();   /* renderStep's resetScene hides every stage */
+    /* Game-complete "Bots Powered Up!" end screen: confetti + the happy pink
+       bot. Terminal — no Next; the host is told the activity is complete and
+       owns what happens next. */
+    function completeGame() {
+      resetScene();
+      setInstruction("");
+      renderConfettiBits(els.completeConfetti, 1.8);
+      show(els.completeStage);
+      sndConfetti();
+      sndKidsCheer();
+      try {
+        parent.postMessage({ type: "activity_complete" }, "*");
+      } catch (e) { }
     }
 
     function burstCelebration(cx, cy) {
@@ -11200,8 +11430,9 @@
           piece.style.position = "absolute";
           piece.style.width = dispW + "px";
           piece.style.height = dispH + "px";
-          piece.style.left = (sc.x + nx - dispW / 2) + "px";
-          piece.style.top = (sc.y + ny - dispH / 2) + "px";
+          var bn = boxSeatNudgeFor(r, i);
+          piece.style.left = (sc.x + nx + bn.x - dispW / 2) + "px";
+          piece.style.top = (sc.y + ny + bn.y - dispH / 2) + "px";
           piece.style.filter = "none";
           piece.style.borderRadius = quarterRadius(r, i);   /* quarter-circle for the circle round */
           piece.style.transformOrigin = "center center";
@@ -11294,8 +11525,8 @@
   </script>
   <!-- Screen switcher — small always-visible debug bar to jump between scenes.
      Purely additive; delete this one line to remove it from the game. -->
-  <!-- <script src="debugScreens.js"></script> -->
-  <!-- <script src="debug.js"></script> -->
+  <script src="debugScreens.js"></script>
+  <script src="debug.js"></script>
 
 
 </body>
