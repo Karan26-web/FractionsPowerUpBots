@@ -3960,7 +3960,8 @@
       position: absolute;
       left: 50%;
       bottom: 80px;
-      width: 940px;
+      /* four 260px bot slots (one per charged bot in the round) */
+      width: 1080px;
       height: 392px;
       display: flex;
       align-items: flex-end;
@@ -3988,9 +3989,40 @@
       animation: completeBotBounce 1.6s ease-in-out var(--bounce-delay, 0s) infinite;
     }
 
-    /* Right-side bot mirrored to face the centre one */
+    /* Right-side bots mirrored to face the centre pair */
     .complete-bot.flipped {
       transform: scaleX(-1);
+    }
+
+    /* End-screen Next: same glossy orange success button as #nextButton.is-success
+       (right edge, vertically centred, breathing pulse). Sits above the looping
+       confetti layer (z5) so it stays tappable. */
+    #completeNext {
+      position: absolute;
+      right: 16px;
+      top: 50%;
+      width: 92px;
+      border: 0;
+      padding: 0;
+      background: transparent;
+      transform: translateY(-50%);
+      z-index: 7;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+      filter: drop-shadow(0 0 18px rgba(255, 176, 64, .8)) drop-shadow(0 8px 16px rgba(210, 110, 0, .45));
+      animation: nextSuccessPulse 1.6s ease-in-out infinite;
+    }
+
+    #completeNext:hover {
+      transform: translateY(-50%) scale(1.035);
+    }
+
+    #completeNext:active {
+      transform: translateY(-50%) scale(.96);
+    }
+
+    #completeNext:active .next-play {
+      box-shadow: 0 3px 7px rgba(190, 90, 0, .35);
     }
 
     .complete-confetti {
@@ -4413,11 +4445,25 @@
           <img class="complete-bot-img" style="--bot-w:190px" src="assets/happyPinkBot.webp" alt="">
           <div class="complete-ground-shadow"></div>
         </div>
+        <div class="complete-bot flipped">
+          <img class="complete-bot-img" style="--bot-w:190px;--bounce-delay:-1.1s" src="assets/happyPinkBot.webp" alt="">
+          <div class="complete-ground-shadow"></div>
+        </div>
         <div class="complete-bot flipped" style="--shadow-w:120px">
-          <img class="complete-bot-img" style="--bot-w:150px;--bounce-delay:-1.1s" src="assets/happyPinkBot.webp" alt="">
+          <img class="complete-bot-img" style="--bot-w:150px;--bounce-delay:-.7s" src="assets/happyPinkBot.webp" alt="">
           <div class="complete-ground-shadow"></div>
         </div>
       </div>
+      <button id="completeNext" type="button" aria-label="Next">
+        <span class="next-play" aria-hidden="true">
+          <span class="np-body">
+            <svg class="np-arrow" viewBox="0 0 100 100" aria-hidden="true">
+              <path d="M22 40 H49 V27 L75 50 L49 73 V60 H22 Z" fill="#fff" stroke="#fff" stroke-width="9"
+                stroke-linejoin="round" stroke-linecap="round" />
+            </svg>
+          </span>
+        </span>
+      </button>
     </section>
 
     <!-- Lab-gate intro: two sliding doors (one full gate image split across two
@@ -4501,6 +4547,38 @@
       _themeDuckCount = Math.max(0, _themeDuckCount - 1);
       if (_themeAudio && _themeDuckCount === 0) {
         _themeAudio.volume = THEME_BASE_VOLUME;
+      }
+    }
+    /* ── VO-priority ducking ─────────────────────────────────────────────
+       The instruction voice-over must stay intelligible over every effect:
+       while one plays, file SFX drop to VO_SFX_DUCK of their base volume and
+       the WebAudio SFX bus ramps down by the same factor (the theme already
+       ducks via duckTheme). Two directions are covered: applyVoDuck squashes
+       SFX ALREADY playing when a VO starts, and sfxVolume() pre-ducks SFX
+       that START while a VO is running. Everything restores on VO end. */
+    var VO_SFX_DUCK = 0.25;
+    var _voDuckables = [];
+    function registerVoDuckable(audio, baseVolume) {
+      if (!audio) { return audio; }
+      audio._voBaseVolume = baseVolume == null ? 1 : baseVolume;
+      _voDuckables.push(audio);
+      return audio;
+    }
+    function voActive() {
+      var a = _instructionAudioCurrent;
+      return !!(a && !a.paused && !a.ended);
+    }
+    function sfxVolume(base) {
+      return voActive() ? base * VO_SFX_DUCK : base;
+    }
+    function applyVoDuck(on) {
+      _voDuckables.forEach(function (a) {
+        try { a.volume = a._voBaseVolume * (on ? VO_SFX_DUCK : 1); } catch (e) { }
+      });
+      if (_ac && _sfxBusNode) {
+        try {
+          _sfxBusNode.gain.setTargetAtTime(SFX_GAIN * (on ? VO_SFX_DUCK : 1), _ac.currentTime, 0.04);
+        } catch (e) { }
       }
     }
     var PLUG_CONNECT_AUDIO_SRC = "audios/PlugConnect.ogg";
@@ -4593,6 +4671,9 @@
         audio._ducked = true;
         var release = function () {
           if (audio._ducked) { audio._ducked = false; unduckTheme(); }
+          /* A chained line may already be playing when THIS clip's async pause
+             event lands — only lift the duck when no VO is left running. */
+          if (!voActive()) { applyVoDuck(false); }
         };
         audio.addEventListener("ended", release, { once: true });
         audio.addEventListener("pause", release, { once: true });
@@ -4600,6 +4681,7 @@
         if (p && typeof p.catch === "function") {
           p.catch(function () { release(); });
         }
+        applyVoDuck(true);
         return audio;
       } catch (e) { }
       return null;
@@ -4609,7 +4691,7 @@
         var a = new Audio(PLUG_CONNECT_AUDIO_SRC);
         a.preload = "auto";
         a.volume = PLUG_CONNECT_VOLUME;
-        return a;
+        return registerVoDuckable(a, PLUG_CONNECT_VOLUME);
       } catch (e) { return null; }
     })();
     function _ctx() { if (!_ac) { var AC = window.AudioContext || window.webkitAudioContext; if (AC) _ac = new AC(); } return _ac; }
@@ -4711,7 +4793,7 @@
       if (!audioSceneIsReadyRound(round)) { return Promise.reject(); }
       try {
         var audio = new Audio(PLUG_CONNECT_AUDIO_SRC);
-        audio.volume = PLUG_CONNECT_VOLUME;
+        audio.volume = sfxVolume(PLUG_CONNECT_VOLUME);
         return audio.play();
       } catch (e) {
         return Promise.reject(e);
@@ -4720,7 +4802,7 @@
     function playLaserCutMedia() {
       try {
         if (!_laserCutAudio) {
-          _laserCutAudio = new Audio("audios/laserSound.ogg");
+          _laserCutAudio = registerVoDuckable(new Audio("audios/laserSound.ogg"), 0.95);
           _laserCutAudio.preload = "auto";
           _laserCutAudio.volume = 0.95;
           var releaseLaser = function () {
@@ -4737,6 +4819,7 @@
           unduckTheme();
         }
         _laserCutAudio.currentTime = 0;
+        _laserCutAudio.volume = sfxVolume(0.95);
         duckTheme();
         _laserCutAudio._ducked = true;
         var p = _laserCutAudio.play();
@@ -4850,11 +4933,12 @@
       function finish() { if (done) { return; } done = true; if (onEnded) { onEnded(); } }
       try {
         if (!_chargeBeamAudio) {
-          _chargeBeamAudio = new Audio("audios/flashlight.ogg");
+          _chargeBeamAudio = registerVoDuckable(new Audio("audios/flashlight.ogg"), 1);
           _chargeBeamAudio.preload = "auto";
         }
         _chargeBeamAudio.onended = finish;
         _chargeBeamAudio.currentTime = 0;
+        _chargeBeamAudio.volume = sfxVolume(1);
         var p = _chargeBeamAudio.play();
         if (p && typeof p.catch === "function") { p.catch(finish); }
       } catch (e) { finish(); }
@@ -4865,10 +4949,11 @@
       /* Lab-gate parting cue — plays after the play-button gesture, so unlocked. */
       try {
         if (!_gateOpenAudio) {
-          _gateOpenAudio = new Audio("audios/gateOpen.ogg");
+          _gateOpenAudio = registerVoDuckable(new Audio("audios/gateOpen.ogg"), 1);
           _gateOpenAudio.preload = "auto";
         }
         _gateOpenAudio.currentTime = 0;
+        _gateOpenAudio.volume = sfxVolume(1);
         var p = _gateOpenAudio.play();
         if (p && typeof p.catch === "function") { p.catch(function () { }); }
       } catch (e) { }
@@ -4934,10 +5019,11 @@
     function sndConfetti() {
       try {
         if (!_confettiAudio) {
-          _confettiAudio = new Audio("audios/confettiSound.ogg");
+          _confettiAudio = registerVoDuckable(new Audio("audios/confettiSound.ogg"), 1);
           _confettiAudio.preload = "auto";
         }
         _confettiAudio.currentTime = 0;
+        _confettiAudio.volume = sfxVolume(1);
         var p = _confettiAudio.play();
         if (p && typeof p.catch === "function") { p.catch(function () { }); }
       } catch (e) { }
@@ -4946,10 +5032,11 @@
     function sndClap() {
       try {
         if (!_clapAudio) {
-          _clapAudio = new Audio("audios/clapSound.ogg");
+          _clapAudio = registerVoDuckable(new Audio("audios/clapSound.ogg"), 1);
           _clapAudio.preload = "auto";
         }
         _clapAudio.currentTime = 0;
+        _clapAudio.volume = sfxVolume(1);
         var p = _clapAudio.play();
         if (p && typeof p.catch === "function") { p.catch(function () { }); }
       } catch (e) { }
@@ -4959,7 +5046,7 @@
       if (!_plugConnectAudio) { return null; }
       try {
         _plugConnectAudio.muted = false;
-        _plugConnectAudio.volume = PLUG_CONNECT_VOLUME;
+        _plugConnectAudio.volume = sfxVolume(PLUG_CONNECT_VOLUME);
         _plugConnectAudio.currentTime = 0;
         if (!_plugConnectAudio._duckBound) {
           _plugConnectAudio._duckBound = true;
@@ -5469,6 +5556,7 @@
       nextButton: document.getElementById("nextButton"),
       completeStage: document.getElementById("completeStage"),
       completeConfetti: document.getElementById("completeConfetti"),
+      completeNext: document.getElementById("completeNext"),
       winConfetti: document.getElementById("winConfetti")
     };
 
@@ -8777,7 +8865,7 @@
        the same vertices around the image centre instead of keeping four
        hand-calibrated seats. */
     var HOLLOW_OUTLINE_TRI = {
-      "triangleHollow.webp": [[0.1534, 0.1070], [0.8683, 0.1070], [0.1534, 0.9086]]
+      "triangleHollow.webp": [[0.1453, 0.1148], [0.8815, 0.1148], [0.1453, 0.9074]]
     };
 
     /* Hollow highlight (slotInstruct): pulsing frames whose stroke sits on
@@ -11320,6 +11408,14 @@
       cutBlock();
     });
     els.tryAgain.addEventListener("click", function () { sndTap(); tryAgain(); });
+    /* End-screen Next: the show-time activity_complete post (completeGame) is the
+       host's analytics signal; this click is the child's explicit "move on". */
+    els.completeNext.addEventListener("click", function () {
+      sndTap();
+      try {
+        parent.postMessage({ type: "activity_complete" }, "*");
+      } catch (e) { }
+    });
     els.nextButton.addEventListener("click", handleNextButton);
 
     /* ── Critical-asset warm cache ──────────────────────────────────────────
@@ -11583,8 +11679,8 @@
   </script>
   <!-- Screen switcher — small always-visible debug bar to jump between scenes.
      Purely additive; delete this one line to remove it from the game. -->
-  <!-- <script src="debugScreens.js"></script>
-  <script src="debug.js"></script> -->
+  <script src="debugScreens.js"></script>
+  <script src="debug.js"></script>
 
 
 </body>
