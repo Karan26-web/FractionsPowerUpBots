@@ -3771,7 +3771,7 @@
     /* ── Code-built glossy ORANGE circular "Next" button (pure HTML+CSS, no image) ──
        Cream rim (wrapper bg + padding) → orange gradient body (golden top, deep
        orange bottom) with an upper-left gloss → a bold rounded white right-arrow.
-       Replaces NextButton2.webp; shown only in the success (.is-success) state. */
+       Shown only in the success (.is-success) state. */
     #nextButton .next-play {
       display: none;
     }
@@ -3909,101 +3909,23 @@
       z-index: 60;
       overflow: hidden;
       isolation: isolate;
-      background-color: #e6f0ff;
-      background:
-        radial-gradient(circle at 50% 40%, #ffffff 0 13%, #e5efff 35%, #c5daff 100%),
-        linear-gradient(180deg, #e6f0ff 0%, #dbeaff 100%);
+      /* flat fallback sampled from the art's corners — no white flash if the
+         image is still decoding */
+      background: #4d62d8;
       transition: opacity .35s ease;
     }
 
-    #completeStage::before {
-      content: "";
+    /* The end screen IS the art (postLBD): title, the four cheering bots and the
+       studio floor are all baked in, so the stage only layers confetti + Next on
+       top. 1672×941 ≈ the 16:9 frame; cover absorbs the ~0.1% aspect difference. */
+    #completeBg {
       position: absolute;
-      inset: -110px -180px -60px;
-      background: repeating-conic-gradient(from -10deg at 50% 32%,
-          rgba(255, 255, 255, .5) 0deg,
-          rgba(255, 255, 255, .5) 8deg,
-          rgba(170, 201, 255, .2) 8deg,
-          rgba(170, 201, 255, .2) 18deg);
-      opacity: .74;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
       z-index: 0;
       pointer-events: none;
-    }
-
-    #completeStage::after {
-      content: "";
-      position: absolute;
-      left: 0;
-      right: 0;
-      bottom: 58px;
-      height: 31px;
-      background: rgba(86, 150, 244, .55);
-      box-shadow: 0 -1px 0 rgba(255, 255, 255, .46), 0 6px 16px rgba(77, 136, 221, .2);
-      z-index: 1;
-    }
-
-    .complete-copy {
-      position: absolute;
-      left: 50%;
-      top: 54px;
-      width: 640px;
-      transform: translateX(-50%);
-      text-align: center;
-      color: #10295d;
-      font-weight: 900;
-      z-index: 6;
-      text-shadow: 0 3px 0 rgba(255, 255, 255, .76), 0 6px 13px rgba(20, 50, 104, .16);
-    }
-
-    .complete-title {
-      font-size: 56px;
-      line-height: 1.04;
-      letter-spacing: 0;
-    }
-
-    .complete-sub {
-      margin-top: 12px;
-      font-size: 32px;
-      line-height: 1.1;
-      color: #10295d;
-    }
-
-    .complete-bots {
-      position: absolute;
-      left: 50%;
-      bottom: 80px;
-      /* four 260px bot slots (one per charged bot in the round) */
-      width: 1080px;
-      height: 392px;
-      display: flex;
-      align-items: flex-end;
-      justify-content: center;
-      transform: translateX(-50%);
-      z-index: 3;
-    }
-
-    .complete-bot {
-      position: relative;
-      width: 260px;
-      height: 372px;
-      display: flex;
-      align-items: flex-end;
-      justify-content: center;
-    }
-
-    .complete-bot-img {
-      display: block;
-      width: var(--bot-w);
-      height: auto;
-      object-fit: contain;
-      filter: drop-shadow(0 16px 20px rgba(63, 96, 151, .2)) drop-shadow(0 0 22px rgba(86, 229, 255, .56));
-      /* negative delays desync the trio so they don't bounce in lockstep */
-      animation: completeBotBounce 1.6s ease-in-out var(--bounce-delay, 0s) infinite;
-    }
-
-    /* Right-side bots mirrored to face the centre pair */
-    .complete-bot.flipped {
-      transform: scaleX(-1);
     }
 
     /* End-screen Next: same glossy orange success button as #nextButton.is-success
@@ -4067,31 +3989,6 @@
       transform: translate3d(0, -80px, 0) rotate(var(--r));
       animation: completeConfettiFall var(--dur, 3.4s) linear infinite;
       animation-delay: var(--d);
-    }
-
-    .complete-ground-shadow {
-      position: absolute;
-      left: 50%;
-      bottom: -2px;
-      width: var(--shadow-w, 150px);
-      height: 18px;
-      border-radius: 50%;
-      transform: translateX(-50%);
-      background: rgba(47, 85, 144, .16);
-      filter: blur(3px);
-      z-index: -1;
-    }
-
-    @keyframes completeBotBounce {
-
-      0%,
-      100% {
-        transform: translateY(0) rotate(0)
-      }
-
-      50% {
-        transform: translateY(-10px) rotate(1.2deg)
-      }
     }
 
     @keyframes completeConfettiFall {
@@ -4433,9 +4330,7 @@
 
 
     <section id="completeStage" class="hidden" aria-live="polite">
-      <div class="complete-copy">
-        <div class="complete-title">Bots Powered Up!</div>
-      </div>
+      <img id="completeBg" src="assets/postLBD.png" alt="Bots Powered Up!">
       <div id="completeConfetti" class="complete-confetti" aria-hidden="true">
         <span style="--x:8%;--y:17%;--c:#4dbeff;--r:24deg;--d:.1s"></span>
         <span style="--x:15%;--y:31%;--c:#9b5fd9;--r:-38deg;--d:.7s"></span>
@@ -4447,24 +4342,6 @@
         <span style="--x:69%;--y:42%;--c:#4dbeff;--r:30deg;--d:.8s"></span>
         <span style="--x:79%;--y:57%;--c:#78dc2d;--r:-31deg;--d:.5s"></span>
         <span style="--x:62%;--y:63%;--c:#68c7ff;--r:48deg;--d:1.1s"></span>
-      </div>
-      <div class="complete-bots" aria-hidden="true">
-        <div class="complete-bot" style="--shadow-w:120px">
-          <img class="complete-bot-img" style="--bot-w:150px;--bounce-delay:-.5s" src="assets/happyPinkBot.webp" alt="">
-          <div class="complete-ground-shadow"></div>
-        </div>
-        <div class="complete-bot">
-          <img class="complete-bot-img" style="--bot-w:190px" src="assets/happyPinkBot.webp" alt="">
-          <div class="complete-ground-shadow"></div>
-        </div>
-        <div class="complete-bot flipped">
-          <img class="complete-bot-img" style="--bot-w:190px;--bounce-delay:-1.1s" src="assets/happyPinkBot.webp" alt="">
-          <div class="complete-ground-shadow"></div>
-        </div>
-        <div class="complete-bot flipped" style="--shadow-w:120px">
-          <img class="complete-bot-img" style="--bot-w:150px;--bounce-delay:-.7s" src="assets/happyPinkBot.webp" alt="">
-          <div class="complete-ground-shadow"></div>
-        </div>
       </div>
       <button id="completeNext" type="button" aria-label="Next">
         <span class="next-play" aria-hidden="true">
@@ -7059,8 +6936,59 @@
       return {
         minX: minX, minY: minY, width: boxW, height: boxH,
         clipInner: "polygon(" + clipInner + ")",
-        centroid: polyCentroid(polygon)
+        centroid: polyCentroid(polygon),
+        points: polygon   /* block-space outline — the misfit seating fits this to the hollow */
       };
+    }
+
+    /* Which corner hollow each cut sector belongs to. gridSectorPieces returns
+       sectors in clip-sign order (for a V+H pair that is [tr,br,tl,bl]), NOT the
+       [tl,tr,bl,br] order of cornerSlotEls — so indexing slots by array position
+       sent every piece to the wrong hollow, across the stage.
+       Match ROTATIONALLY, not per piece: sort the sectors by the angle of their
+       centroid, then slide that ring against the corners' own ring (tl→tr→br→bl,
+       clockwise) and keep the offset with the best total agreement. A per-piece
+       nearest-corner pass looks equivalent but breaks on a diagonal-pair cut,
+       where the four sectors point N/E/S/W and every corner is a 45° tie — it
+       hands out three ties and strands the last piece on the opposite corner.
+       Sliding the whole ring keeps neighbours as neighbours, so no piece ever
+       crosses the frame. */
+    var SECTOR_CORNER_RING = [0, 1, 3, 2];   /* tl, tr, br, bl — clockwise */
+    var SECTOR_RING_ANGLES = [-135, -45, 45, 135];
+    /* The four candidate assignments (one per ring rotation), each with how well it
+       agrees with where the sectors actually lie. Every rotation keeps neighbours
+       as neighbours, so no piece ever crosses the frame; the caller picks among
+       them — the misfit seating prefers the rotation that lets the pieces render
+       largest, since a wide sector in a wide hollow seats ~2x bigger than the same
+       sector in a tall one. */
+    function sectorCornerAssignments(geos, width, height) {
+      var ring = geos.map(function (geo, i) {
+        var vx = geo.centroid.x - width / 2, vy = geo.centroid.y - height / 2;
+        return { piece: i, angle: Math.atan2(vy, vx) * 180 / Math.PI };
+      }).sort(function (a, b) { return a.angle - b.angle; });
+      return SECTOR_CORNER_RING.map(function (_, k) {
+        var order = [], agreement = 0;
+        ring.forEach(function (entry, j) {
+          var corner = (j + k) % SECTOR_CORNER_RING.length;
+          order[entry.piece] = SECTOR_CORNER_RING[corner];
+          agreement += Math.cos((entry.angle - SECTOR_RING_ANGLES[corner]) * Math.PI / 180);
+        });
+        return { order: order, agreement: agreement };
+      });
+    }
+
+    /* The box a CORRECT quarter occupies inside a hollow — one source of truth
+       for both the win seating and the misfit seating. Diagonal rounds and the
+       quarter-disc round seat a square off the hollow's short side; box rounds
+       fill the hollow per-axis (a wide rectangle hollow gets a wide seat). */
+    function seatBoxFor(r, sc) {
+      if (isDiagRound(r)) { return triSeatBox(r, sc); }
+      if (r.squareSeat) {
+        var q = Math.min(sc.w, sc.h) * r.slotFill.w;
+        return { w: q, h: q };
+      }
+      if (r.slotFill) { return { w: sc.w * r.slotFill.w, h: sc.h * r.slotFill.h }; }
+      return { w: sc.w * 0.52, h: sc.h * 0.52 };
     }
 
     function gridSectorPieces(width, height, a1, a2) {
@@ -8954,6 +8882,121 @@
       "triangleHollow.webp": [[0.1453, 0.1148], [0.8815, 0.1148], [0.1453, 0.9074]]
     };
 
+    /* The hollow art's own outline as a CONVEX polygon in game space — the
+       measured maps above, spun by that slot's --cs-rot and placed on the slot's
+       live centre. A polygon, not a box, because the box lies about how much room
+       a hollow has: the triangle art's bounding box is twice the triangle, and its
+       centre sits ~41px off the slot centre on the lower pair. Misfit pieces are
+       fitted against this, so they end up as large as the real shape allows and
+       still inside it. Falls back to the piece-seat rectangle when an asset has no
+       measurement. */
+    var HOLLOW_ARC_STEPS = 8;
+    function hollowOutlinePoints(r, slot) {
+      var sc = gameSpaceCenter(slot);
+      var iw = slot.offsetWidth, ih = slot.offsetHeight;
+      var rot = (((parseFloat(slot.style.getPropertyValue("--cs-rot")) || 0) % 360) + 360) % 360;
+      var rad = rot * Math.PI / 180, cosR = Math.cos(rad), sinR = Math.sin(rad);
+      var tri = isDiagRound(r) ? HOLLOW_OUTLINE_TRI[podBasename(r.cornerSlot)] : null;
+      var frac;
+      if (tri) {
+        frac = tri.map(function (v) { return { x: v[0], y: v[1] }; });
+      } else {
+        var cav = HOLLOW_OUTLINE_GEOMETRY[podBasename(r.cornerSlot)];
+        if (!cav) {
+          /* unmeasured art: the seat rectangle, centred on the slot */
+          var seat = seatBoxFor(r, sc);
+          return [
+            { x: sc.x - seat.w / 2, y: sc.y - seat.h / 2 }, { x: sc.x + seat.w / 2, y: sc.y - seat.h / 2 },
+            { x: sc.x + seat.w / 2, y: sc.y + seat.h / 2 }, { x: sc.x - seat.w / 2, y: sc.y + seat.h / 2 }
+          ];
+        }
+        var x0 = cav.cx - cav.w / 2, x1 = cav.cx + cav.w / 2;
+        var y0 = cav.cy - cav.h / 2, y1 = cav.cy + cav.h / 2;
+        if (cav.arc) {
+          /* Quarter-disc: right angle at the outline box's far corner, the arc
+             sweeping from (x1,y0) to (x0,y1) — the unrotated art's arc is
+             top-left (see ARC_RADIUS_BY_ROT). Sampled so the fit respects the
+             curve instead of the square that contains it. */
+          frac = [{ x: x1, y: y1 }, { x: x1, y: y0 }];
+          for (var t = 1; t < HOLLOW_ARC_STEPS; t++) {
+            var a = (t / HOLLOW_ARC_STEPS) * Math.PI / 2;
+            frac.push({ x: x1 - cav.w * Math.sin(a), y: y0 + cav.h * (1 - Math.cos(a)) });
+          }
+          frac.push({ x: x0, y: y1 });
+        } else {
+          frac = [{ x: x0, y: y0 }, { x: x1, y: y0 }, { x: x1, y: y1 }, { x: x0, y: y1 }];
+        }
+      }
+      return frac.map(function (f) {
+        var vx = (f.x - 0.5) * iw, vy = (f.y - 0.5) * ih;
+        return { x: sc.x + vx * cosR - vy * sinR, y: sc.y + vx * sinR + vy * cosR };
+      });
+    }
+
+    /* A convex outline as outward half-planes {nx, ny, d}: inside is n·p <= d.
+       `slack` pushes every edge OUT by that many px, so the half-planes describe
+       "inside the hollow, or at most slack px past it" — which is how a misfit
+       piece should sit: filling the cavity, overhanging a little where its shape
+       doesn't belong. Measuring against the edges (not a bounding box) is what
+       makes the allowance mean the same thing for a triangle, a rectangle and a
+       quarter-disc; a box-based cap lets a square poke 40px out of a triangle
+       while its box still looks contained. */
+    function convexHalfPlanes(points, slack) {
+      var c = polyCentroid(points);
+      var out = [];
+      for (var i = 0; i < points.length; i++) {
+        var p = points[i], q = points[(i + 1) % points.length];
+        var nx = q.y - p.y, ny = p.x - q.x;
+        var len = Math.sqrt(nx * nx + ny * ny) || 1;
+        nx /= len; ny /= len;
+        var d = nx * p.x + ny * p.y;
+        if (nx * c.x + ny * c.y > d) { nx = -nx; ny = -ny; d = -d; }
+        out.push({ nx: nx, ny: ny, d: d + (slack || 0) });
+      }
+      return out;
+    }
+
+    /* Largest scale at which a piece still satisfies every half-plane. `vs` are the
+       piece's outline points as vectors from its scaling origin, `vc` the vector to
+       the point pinned at `anchor`. Pinning a point makes each half-plane a direct
+       bound on s, so the exact maximum is one pass over (vertex x edge). */
+    function maxScaleInHollow(vs, vc, planes, anchor) {
+      var best = Infinity;
+      for (var k = 0; k < planes.length; k++) {
+        var e = planes[k];
+        var room = e.d - (e.nx * anchor.x + e.ny * anchor.y);
+        if (room <= 0) { return 0; }   /* anchor is outside the hollow */
+        for (var j = 0; j < vs.length; j++) {
+          var reach = e.nx * (vs[j].x - vc.x) + e.ny * (vs[j].y - vc.y);
+          if (reach > 0.0001) { best = Math.min(best, room / reach); }
+        }
+      }
+      return best;
+    }
+
+    /* Best place to pin a piece inside a hollow, and the scale that place allows.
+       Dead centre is rarely the roomiest spot for a mismatched shape — a ◣ inside a
+       ▶ sits far bigger pushed toward the hollow's wide side — so try the centroid
+       plus a coarse grid around it and keep the winner. ~50 half-plane passes per
+       piece, once, on a screen that is already animating. */
+    var HOLLOW_ANCHOR_OFFSETS = [0, -0.22, -0.11, 0.11, 0.22];
+    function bestHollowFit(vs, vc, planes, points) {
+      var c = polyCentroid(points);
+      var xs = points.map(function (p) { return p.x; });
+      var ys = points.map(function (p) { return p.y; });
+      var w = Math.max.apply(null, xs) - Math.min.apply(null, xs);
+      var h = Math.max.apply(null, ys) - Math.min.apply(null, ys);
+      var best = { scale: 0, anchor: c };
+      HOLLOW_ANCHOR_OFFSETS.forEach(function (fx) {
+        HOLLOW_ANCHOR_OFFSETS.forEach(function (fy) {
+          var a = { x: c.x + fx * w, y: c.y + fy * h };
+          var s = maxScaleInHollow(vs, vc, planes, a);
+          if (s > best.scale) { best = { scale: s, anchor: a }; }
+        });
+      });
+      return best;
+    }
+
     /* Hollow highlight (slotInstruct): pulsing frames whose stroke sits on
        the pod's outline (measured outline box where available, else the
        same seat math as flyQuartersToCorners / __debugRenderFit) — lit
@@ -10336,17 +10379,80 @@
     }
 
     /* Incorrect cut: fly the player's REAL pieces (whatever shapes the two cuts
-       produced) toward the corner hollows, then vibrate them in place — a
-       triangle/odd sector visibly will not seat in a square slot. */
-    function flySectorsToCornersVibrate(r, center, a1, a2, contain, onDone) {
+       produced) into the corner hollows, then vibrate them in place. Every piece
+       lands INSIDE its cavity whatever its shape — the "doesn't fit" reading comes
+       from the shapes not matching the hollow and from the parts being unequal,
+       never from art spilling over the bots or off the frame. */
+    function flySectorsToCornersVibrate(r, center, a1, a2, onDone) {
       var layer = els.flightLayer;
       els.machineBlock.innerHTML = "";
       hide(els.machineStage);
       var W = r.blockW, H = r.blockH;
       var geos = gridSectorPieces(W, H, a1, a2);
+      /* Size the set against the hollows, not against the block:
+           • ONE scale for all four pieces, so an unequal cut still reads as unequal
+             (a double-size part stays double size — no per-piece normalising);
+           • that scale is the true seat scale by area — a wrong part renders with
+             the same footprint a CORRECT part would, which is what makes it legible;
+           • capped per corner so a piece never reaches more than OVERHANG px past
+             its hollow art. The old code had no cap at all: a sector kept true
+             block scale and rendered 1.4-1.5x the hollow, 330px wide in the
+             triangle round, over the bots and off the frame.
+         The residual overhang IS the teaching: a shape that doesn't belong in the
+         slot pokes past its rim a little. Strict containment was tried and reads
+         wrong — a wide sector forced fully inside a tall triangle hollow shrinks to
+         a third of the correct part's size and stops looking like a piece of the
+         block at all. */
+      /* OVERHANG: px a piece may reach past the hollow art's edge while seated —
+         enough that a mismatched shape visibly doesn't belong, small enough that it
+         never touches a bot or the frame. SHAKE_RESERVE keeps that true during the
+         .piece-vibrate wobble too (±3px plus ~2px from the ±2.5° tilt), so the
+         budget describes the animation, not just the rest pose. */
+      var OVERHANG = 10, SHAKE_RESERVE = 5;
+      var outlines = els.cornerSlotEls.map(function (slot) { return hollowOutlinePoints(r, slot); });
+      var planes = outlines.map(function (pts) { return convexHalfPlanes(pts, OVERHANG - SHAKE_RESERVE); });
+      var seat = seatBoxFor(r, gameSpaceCenter(els.cornerSlotEls[0]));
+      var quarterS = Math.sqrt((seat.w * seat.h) / Math.max(1, W * H / 4));
+      /* Each piece's outline as vectors from its wrap centre (the scaling origin),
+         plus the vector to its centroid — the point pinned on the hollow. */
+      var vecs = geos.map(function (geo) {
+        var cX = geo.width / 2, cY = geo.height / 2;
+        return {
+          vs: (geo.points || []).map(function (p) { return { x: p.x - geo.minX - cX, y: p.y - geo.minY - cY }; }),
+          vc: { x: geo.centroid.x - geo.minX - cX, y: geo.centroid.y - geo.minY - cY }
+        };
+      });
+      /* Pick among the four ring rotations by the size they allow. The hollows are
+         one asset rotated per corner, so in the triangle round one pair of cavities
+         is wide where the other is tall — landing the wide sectors in the wide
+         cavities lets the whole set render ~2x larger for free. Ties go to the
+         rotation that best matches where the sectors actually lie. */
+      var fitFor = function (order) {
+        var fits = vecs.map(function (v, i) {
+          return bestHollowFit(v.vs, v.vc, planes[order[i]], outlines[order[i]]);
+        });
+        var s = quarterS;
+        fits.forEach(function (f) { s = Math.min(s, f.scale); });
+        return { fits: fits, scale: s };
+      };
+      var pick = sectorCornerAssignments(geos, W, H).map(function (c) {
+        var f = fitFor(c.order);
+        return { order: c.order, agreement: c.agreement, fits: f.fits, scale: f.scale };
+      }).reduce(function (best, c) {
+        if (c.scale > best.scale * 1.02) { return c; }
+        if (best.scale > c.scale * 1.02) { return best; }
+        return c.agreement > best.agreement ? c : best;
+      });
+      var order = pick.order;
+      var scale = Math.max(0.05, pick.scale);
+      /* Anchor per piece: the hollow's centroid when it can hold the shared scale
+         (reads as centred), else the roomier spot that won the fit. */
+      var targets = geos.map(function (geo, i) {
+        var c = order[i], mid = polyCentroid(outlines[c]);
+        return maxScaleInHollow(vecs[i].vs, vecs[i].vc, planes[c], mid) >= scale ? mid : pick.fits[i].anchor;
+      });
       geos.forEach(function (geo, i) {
-        var slot = els.cornerSlotEls[i % els.cornerSlotEls.length];
-        var sc = gameSpaceCenter(slot);
+        var corner = order[i] === undefined ? (i % els.cornerSlotEls.length) : order[i];
         var piece = makeSectorPiece(r, geo, W, H);
         piece.classList.add("flying-half");
         piece.style.position = "absolute";
@@ -10357,42 +10463,18 @@
         piece.style.transformOrigin = "center center";
         piece.style.transition = "transform .8s cubic-bezier(.18,.89,.32,1.08)";
         layer.appendChild(piece);
-        /* seatW = the footprint a CORRECT quarter occupies in this slot. Two
-           modes, by cut type:
-             • contain (equal-but-wrong-shape, e.g. diagonal triangles): the piece
-               has a quarter's area but a wider bbox, so it can't both keep true
-               scale AND fit one slot. Scale its longest side down to seatW and
-               CENTRE it in the hollow — reads as "right size, wrong shape."
-             • else (unequal cut): keep the true seat scale (seatW per block-half)
-               and anchor the piece's OUTER corner at the slot's outer corner, so a
-               quarter-sized chunk seats in the hollow and the excess spills inward
-               — the extra is plainly outside the hollow. */
-        var hw = W / 2;
+        /* Pin the piece's own centroid to the hollow outline's centroid, so the ink
+           sits on the art (a triangle cavity's centroid is well off its bounding-box
+           centre, and the lower pair's is ~41px off the slot centre). triSeatNudge is
+           deliberately not used here: it is calibrated to the seated
+           cardinal-triangle clip, while these are arbitrary sector shapes. */
         var cX = geo.width / 2, cY = geo.height / 2;   /* wrap-local centre (scale origin) */
-        var seatW = r.squareSeat
-          ? Math.min(sc.w, sc.h) * r.slotFill.w
-          : (r.slotFill ? sc.w * r.slotFill.w : sc.w * 0.52);
-        var s, dx, dy;
-        if (contain) {
-          s = seatW / Math.max(geo.width, geo.height);
-          /* land the bbox centre on the slot centre (scale is about that centre,
-             so it stays put — clean centring) */
-          dx = sc.x - left - cX;
-          dy = sc.y - top - cY;
-        } else {
-          s = seatW / hw;
-          /* outer bbox corner (toward this slot's screen corner) and the slot's
-             outer corner, offset inward by a quarter-window so a quarter seats */
-          var outRight = (i % 2 === 1);   /* tr, br are on the right */
-          var outDown = (i >= 2);         /* bl, br are on the bottom */
-          var px = outRight ? geo.width : 0;
-          var py = outDown ? geo.height : 0;
-          var tx = sc.x + (outRight ? 1 : -1) * (seatW / 2);
-          var ty = sc.y + (outDown ? 1 : -1) * (seatW / 2);
-          /* page point of local (px,py) = left + cX + (px-cX)*s + dx  → solve for dx */
-          dx = tx - left - cX - (px - cX) * s;
-          dy = ty - top - cY - (py - cY) * s;
-        }
+        var s = scale;
+        var target = targets[i], vc = vecs[i].vc;
+        /* scaling is about the wrap centre, so the centroid lands on the target when
+           the wrap centre goes to target - s * vc */
+        var dx = target.x - s * vc.x - left - cX;
+        var dy = target.y - s * vc.y - top - cY;
         setTimeout(function () {
           requestAnimationFrame(function () {
             piece.style.setProperty("--fitX", dx.toFixed(1) + "px");
@@ -10468,9 +10550,9 @@
              kicks in on the next try (applyAttemptGuides, via tryAgain). */
           state.wrongAttempts = (state.wrongAttempts || 0) + 1;
           var angles = state.gridCutAngles || [0, 90];
-          /* equal-misfit pieces (a quarter's area, wrong shape) sit INSIDE the
-             hollow; unequal pieces keep true scale so the excess overruns it. */
-          flySectorsToCornersVibrate(r, center, angles[0], angles[1], status === "equal-misfit", function () {
+          /* Both misfit kinds seat the same way — every piece lands inside its
+             hollow, sized against the seat and against the other pieces. */
+          flySectorsToCornersVibrate(r, center, angles[0], angles[1], function () {
             hide(els.machineStage);
             var oops = setInstruction("Oops! The parts don't fit in the slots.");
             /* Only offer Try Again once the voice line has finished — don't cut
@@ -11440,9 +11522,9 @@
       }, 5400);
     }
 
-    /* Game-complete "Bots Powered Up!" end screen: confetti + the happy pink
-       bot. Terminal — no Next; the host is told the activity is complete and
-       owns what happens next. */
+    /* Game-complete end screen: the postLBD art (title + the four cheering bots
+       are baked into it) with looping confetti over the top. Terminal — the host
+       is told the activity is complete and owns what happens next. */
     function completeGame() {
       resetScene();
       setInstruction("");
