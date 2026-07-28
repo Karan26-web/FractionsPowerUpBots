@@ -743,11 +743,23 @@
       clip-path: polygon(23.6% 0%, 74.8% 0%, 98.6% 100%, 1.3% 100%);
     }
 
+    /* --cs-dx/--cs-dy nudge a hollow off its class-driven corner position (set per
+       round from cornerNudge). It rides a transform, not left/top, so it applies on
+       every screen layout at once — and because getBoundingClientRect includes
+       transforms, gameSpaceCenter() reports the moved centre and the seated pieces,
+       pod connectors and cavity highlights all follow it.
+       It uses the standalone `translate` property, NOT transform, for two reasons:
+       the used-value order is translate → rotate → scale → transform, so the offset
+       stays in game-space px (unrotated, unscaled by the pop); and only `transform`
+       is in the transition below, so a round switch that changes the nudge snaps
+       instead of sliding for 450ms — otherwise a piece or highlight measured inside
+       that window would seat against a half-moved centre. */
     .corner-slot {
       position: absolute;
       width: 170px;
       height: auto;
       opacity: 0;
+      translate: var(--cs-dx, 0px) var(--cs-dy, 0px);
       transform: rotate(var(--cs-rot, 0deg)) scale(.7);
       transition: opacity .4s ease, transform .45s var(--ease-out-back);
     }
@@ -5349,8 +5361,12 @@
            layout_triangle1_laser (3) export, composed by triSeatNudgeFor.
            The calibration belongs to the ART ROTATION, not the corner, so the
            2026-07-24 reorientation moved the 315° art's value to tr and the
-           45° art's value to br. */
-        triSeatNudge: [{ x: 0.7, y: -0.4 }, { x: -0.4, y: -0.3 }, { x: 0, y: 0.1 }, { x: 0, y: 0.1 }],
+           45° art's value to br.
+           bl/br also carry a -1.65/-1.6 centring term: the 45° art's seat sat low
+           and inboard in its cavity (rim L7.7 R4.4 T4.7 B1.3), so the piece now
+           nests concentrically (L/R 6.05, T/B 3.0). Independent of cornerNudge —
+           that moves the whole niche, this centres the piece inside it. */
+        triSeatNudge: [{ x: 0.7, y: -0.4 }, { x: -0.4, y: -0.3 }, { x: -1.65, y: -1.6 }, { x: -1.65, y: -1.6 }],
         blockSrc: "",
         blockColor: "#FFB35C",
         blockW: 200,
@@ -5375,6 +5391,14 @@
            (see TRI_START_CLIP / TRI_SPIN). (triangleHollow rotates: 45→△,
            135→▶, 225→▽, 315→◀.) */
         cornerRotate: [135, 315, 45, 45],
+        /* The lower hollows are the SAME art rotated 45° instead of 135°, so their
+           cavity is a wide △ (177×88) where the uppers are a tall ▶/◀ (88×177) —
+           at the shared 90px corner inset that put the lower cavities ~26px further
+           from the frame centre by centroid (41px by bbox centre) and let their
+           outer tip run to 87px off the frame edge vs the uppers' 172px. Pull the
+           lower pair inward so all four cavities read as one even frame; the seated
+           pieces, pod wires and cavity highlights follow the slot centres. [tl,tr,bl,br] */
+        cornerNudge: [{ x: 0, y: 0 }, { x: 0, y: 0 }, { x: 34, y: 0 }, { x: -34, y: 0 }],
         /* Seated-triangle box = this × the hollow's measured (rotated) bbox (~231).
            0.712 ≈ 165px — averaged from the four hand-resized pieces in the
            layout_triangle1_laser (3) export, closing the cavity gap the old
@@ -5409,12 +5433,18 @@
         blockH: 200,
         cut: "grid",
         pieces: 4,
-        /* Vertical + horizontal cut of a disc → 4 quarter-circles. */
+        /* Vertical + horizontal cut of a disc → 4 quarter-circles. This pair is
+           what the demo/guide teaches, but it is not the only winning one. */
         gridCutAngles: { vertical: 90, horizontal: 0 },
         cornerForPiece: ["tl", "tr", "bl", "br"],
-        acceptedAngles: [0, 90, 180, 270],
+        /* A disc is rotationally symmetric, so ANY first cut through the centre is
+           a fine first cut — the idle hint nudges CUT instead of a rotate button. */
+        acceptedAngles: [0, 45, 90, 135, 180, 225, 270, 315],
         startAngle: 90,
-        winCutPair: "axis",
+        /* "perp": wins on ANY two perpendicular cuts (0+90 AND 45+135), because a
+           disc cut by two perpendicular diameters always gives four congruent
+           quarter-discs — the tilted set is the axis set rotated (cutFrameSpin). */
+        winCutPair: "perp",
         sadBot: ASSETS + "SquareBotSadState.webp",
         happyBot: ASSETS + "happyPinkBot.webp",
         pod: ASSETS + "SquareHollow.webp",
@@ -5602,6 +5632,14 @@
        rounds need slash(45)+backslash(135). Reads gridCutOrients so after the
        first cut lands it advances to the perpendicular line. null = both done. */
     function gridGuideAngleForRound(r) {
+      /* Perpendicular-pair rounds (circle) have no fixed winning pair: guide the
+         first cut to the pair the demo taught, then to whatever is perpendicular
+         to the cut the player actually made. */
+      if (isPerpRound(r)) {
+        var cuts = state.gridCutAngles || [];
+        if (!cuts.length) { return (r.gridCutAngles && r.gridCutAngles.vertical) || 90; }
+        return cuts.length === 1 ? perpLineAngle(cuts[0]) : null;
+      }
       var needed = (r && r.winCutPair === "diag") ? ["slash", "backslash"] : ["vertical", "horizontal"];
       var done = state.gridCutOrients || [];
       var orientAngle = { vertical: 90, horizontal: 0, slash: 45, backslash: 135 };
@@ -5667,8 +5705,16 @@
         /* Steer toward whichever cut is still missing, so after the first cut the
            hint points to the PERPENDICULAR one instead of "already aligned".
            Axis rounds: vertical↔horizontal. Diagonal rounds (triangle1): the two
-           diagonals — backslash is snap 45 (45/225), slash is snap 135 (135/315). */
-        if (done.indexOf("vertical") !== -1 && done.indexOf("horizontal") === -1) {
+           diagonals — backslash is snap 45 (45/225), slash is snap 135 (135/315).
+           Perpendicular-pair rounds (circle): any first cut is valid (so all eight
+           accepted angles keep the hint on CUT), then steer to its perpendicular. */
+        if (isPerpRound(r)) {
+          var first = (state.gridCutAngles || [])[0];
+          if (first !== undefined) {
+            var perp = perpLineAngle(first);
+            targets = [perp, normalizedAngle(perp + 180)];
+          }
+        } else if (done.indexOf("vertical") !== -1 && done.indexOf("horizontal") === -1) {
           targets = [0, 180];
         } else if (done.indexOf("horizontal") !== -1 && done.indexOf("vertical") === -1) {
           targets = [90, 270];
@@ -6673,6 +6719,12 @@
       return snap === 180 ? 0 : snap;
     }
 
+    /* The cut line perpendicular to `angle`, in the same snapped 0/45/90/135 space:
+       90↔0 (the axis pair) and 45↔135 (the diagonal pair). */
+    function perpLineAngle(angle) {
+      return lineAngleDegrees(lineAngleDegrees(angle) + 90);
+    }
+
     function canonicalCutAngle(r) {
       if (r.successAngle !== undefined) { return lineAngleDegrees(r.successAngle); }
       if (r.cut === "horizontal") { return 0; }
@@ -7051,6 +7103,21 @@
        triangles and each seats into a corner triangle-hollow. */
     function isDiagRound(r) { return !!(r && r.winCutPair === "diag"); }
 
+    /* Perpendicular-pair rounds (the circle): the block is rotationally symmetric
+       about its centre, so any two perpendicular cuts give the same four congruent
+       pieces — 45+135 is as correct as 90+0. */
+    function isPerpRound(r) { return !!(r && r.winCutPair === "perp"); }
+
+    /* How far the player's cut frame is turned from the axis frame, in degrees
+       (0 or 45). A 45+135 pair IS the 90+0 pair rotated 45°, so the four quarters
+       start rotated by this much and untwist to 0° as they seat. Rounds that can
+       only win on-axis (or on the diagonals) always report 0. */
+    function cutFrameSpin(r) {
+      if (!isPerpRound(r)) { return 0; }
+      var first = (state.gridCutAngles || [])[0];
+      return first === undefined ? 0 : lineAngleDegrees(first) % 90;
+    }
+
     /* Each triangle is an AXIS-ALIGNED box clipped to a 3-point polygon — no
        rotation, so the box sizes straight to the hollow cavity and the layout
        overlay can move/resize/crop it like any rectangle (and a Re-scan can't
@@ -7199,10 +7266,13 @@
        This is the geometric truth used for the teaching label — distinct from
        whether the parts fit the square chargers (see gridCutFitsChargers). */
     function gridCutIsEqualParts(a1, a2) {
+      var r = currentRound();
+      /* Round block (circle): every perpendicular pair of diameters cuts it into
+         four congruent quarter-discs, so equality is just perpendicularity. */
+      if (isPerpRound(r)) { return lineAngleDegrees(a2) === perpLineAngle(a1); }
       var o1 = cutOrientation(a1), o2 = cutOrientation(a2);
       var axisPair = (o1 === "vertical" && o2 === "horizontal") || (o1 === "horizontal" && o2 === "vertical");
       var diagPair = (o1 === "backslash" && o2 === "slash") || (o1 === "slash" && o2 === "backslash");
-      var r = currentRound();
       var isSquare = r && Math.abs((r.blockW || 0) - (r.blockH || 0)) < 1;
       return axisPair || (diagPair && isSquare);
     }
@@ -7211,11 +7281,16 @@
        i.e. one vertical + one horizontal cut. Equal triangles are equal, but
        they don't fit the square sockets, so this is the win condition. */
     function gridCutFitsChargers(a1, a2) {
+      var r = currentRound();
+      /* Perpendicular-pair rounds (circle): a 45+135 cut yields the SAME four
+         quarter-discs as 90+0, only turned — each piece untwists into the seat on
+         its way to the hollow (cutFrameSpin), so it seats just as well. */
+      if (isPerpRound(r)) { return lineAngleDegrees(a2) === perpLineAngle(a1); }
       var o1 = cutOrientation(a1), o2 = cutOrientation(a2);
       /* Diagonal-cut rounds (triangles) win on slash + backslash; their
          triangle sockets only seat triangle pieces. All other rounds win on
-         the axis pair (square/rectangle/quarter-circle sockets). */
-      if (currentRound().winCutPair === "diag") {
+         the axis pair (square/rectangle sockets). */
+      if (r.winCutPair === "diag") {
         return (o1 === "slash" && o2 === "backslash") || (o1 === "backslash" && o2 === "slash");
       }
       return (o1 === "vertical" && o2 === "horizontal") || (o1 === "horizontal" && o2 === "vertical");
@@ -8189,8 +8264,28 @@
       });
     }
 
+    /* Reskin the 4 grid sockets for a round. cornerSlotEls is [tl, tr, bl, br].
+       --cs-rot rotates each niche about its centre so asymmetric hollows (triangle,
+       quarter-circle) face inward without shifting the slot centre the fly-to-corners
+       math relies on. --cs-dx/--cs-dy then shift the whole niche off its corner when
+       the rotated art needs it (cornerNudge; see the triangle round). Called by every
+       screen that shows the hollows, so none can render a stale skin. */
+    function applyCornerSlotSkin(r) {
+      var cornerSlot = r.cornerSlot || (ASSETS + "SquareHollow.webp");
+      var cornerRotate = r.cornerRotate || [0, 0, 0, 0];
+      var cornerNudge = r.cornerNudge || [];
+      els.cornerSlotEls.forEach(function (slot, i) {
+        var nudge = cornerNudge[i] || { x: 0, y: 0 };
+        slot.src = cornerSlot;
+        slot.style.setProperty("--cs-rot", (cornerRotate[i] || 0) + "deg");
+        slot.style.setProperty("--cs-dx", (nudge.x || 0) + "px");
+        slot.style.setProperty("--cs-dy", (nudge.y || 0) + "px");
+      });
+    }
+
     function setupCorners4() {
       var r = currentRound();
+      applyCornerSlotSkin(r);
       els.sceneBg.style.display = "block";
       setInstruction("");
       els.bots.className = "layout-corners4";
@@ -8227,16 +8322,7 @@
         b.style.bottom = "";
         b.style.marginLeft = "";
       });
-      /* Reskin the 4 grid sockets per round. cornerSlotEls is [tl, tr, bl, br];
-         --cs-rot rotates each niche about its centre so asymmetric hollows
-         (triangle, quarter-circle) face inward without shifting the slot centre
-         the fly-to-corners math relies on. */
-      var cornerSlot = r.cornerSlot || (ASSETS + "SquareHollow.webp");
-      var cornerRotate = r.cornerRotate || [0, 0, 0, 0];
-      els.cornerSlotEls.forEach(function (slot, i) {
-        slot.src = cornerSlot;
-        slot.style.setProperty("--cs-rot", (cornerRotate[i] || 0) + "deg");
-      });
+      applyCornerSlotSkin(r);
       /* Diamond round: bigger, corner-spread hollow layout (Figma 37:2681). */
       els.cornerSlots.classList.toggle("slots-diamond", !!r.diamondHollows);
       if (showSlots) {
@@ -10180,10 +10266,23 @@
         return;
       }
 
+      /* The quarters leave the machine from where the cuts actually left them. On a
+         perpendicular-pair round the cut frame can be turned 45° (a disc cut at
+         45+135 = the same four quarter-discs, rotated), so spin the whole assembly
+         by that angle about the block centre and untwist it to 0° in flight — each
+         piece lands in exactly the seat pose the axis cut produces. A rotation
+         about the piece's own centre plus the rotated centre offset IS a rigid
+         rotation about the block centre, and the apex stays pinned there.
+         Axis cuts give spin 0 → the offsets and transforms are unchanged. */
+      var spin = cutFrameSpin(r);
+      var spinRad = spin * Math.PI / 180;
+      var spinCos = Math.cos(spinRad), spinSin = Math.sin(spinRad);
       var qoff = [
         { x: -hw / 2, y: -hh / 2 }, { x: hw / 2, y: -hh / 2 },
         { x: -hw / 2, y: hh / 2 }, { x: hw / 2, y: hh / 2 }
-      ];
+      ].map(function (q) {
+        return { x: q.x * spinCos - q.y * spinSin, y: q.x * spinSin + q.y * spinCos };
+      });
       for (var i = 0; i < 4; i++) {
         (function (i) {
           var slot = els.cornerSlotEls[i];
@@ -10198,6 +10297,10 @@
           piece.style.filter = "none"; piece.style.borderRadius = quarterRadius(r, i);   /* quarter-circle for the circle round */
           piece.style.transformOrigin = "center center";
           piece.style.transition = "transform .8s cubic-bezier(.18,.89,.32,1.08), opacity .4s ease";
+          /* Start pose carries the cut frame's spin. Both ends keep the SAME
+             transform-function list (translate/scale/rotate) so CSS interpolates
+             the slide, the shrink and the untwist independently. */
+          piece.style.transform = "translate(0px,0px) scale(1) rotate(" + spin + "deg)";
           layer.appendChild(piece);
           /* Seated scale. Default: uniform INNER fraction of the slot width (the
              square hollow). Rounds with slotFill fill the hollow box per-axis so
@@ -10218,9 +10321,11 @@
           setTimeout(function () {
             requestAnimationFrame(function () {
               if (success) {
-                piece.style.transform = "translate(" + dx + "px," + dy + "px) scale(" + sX + "," + sY + ")";
+                /* rotate(0deg): the seated pose is the axis-cut pose, so a tilted
+                   cut untwists on the way in and lands pixel-identical to it. */
+                piece.style.transform = "translate(" + dx + "px," + dy + "px) scale(" + sX + "," + sY + ") rotate(0deg)";
               } else {
-                piece.style.transform = "translate(" + (dx * 0.66) + "px," + (dy * 0.66) + "px) scale(" + (sX * 0.92) + "," + (sY * 0.92) + ") rotate(" + (i % 2 ? 9 : -9) + "deg)";
+                piece.style.transform = "translate(" + (dx * 0.66) + "px," + (dy * 0.66) + "px) scale(" + (sX * 0.92) + "," + (sY * 0.92) + ") rotate(" + (spin + (i % 2 ? 9 : -9)) + "deg)";
                 piece.classList.add("soft-mismatch");
               }
             });
