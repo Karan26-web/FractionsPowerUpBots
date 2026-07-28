@@ -3984,7 +3984,13 @@
       height: auto;
       object-fit: contain;
       filter: drop-shadow(0 16px 20px rgba(63, 96, 151, .2)) drop-shadow(0 0 22px rgba(86, 229, 255, .56));
-      animation: completeBotBounce 1.6s ease-in-out infinite;
+      /* negative delays desync the trio so they don't bounce in lockstep */
+      animation: completeBotBounce 1.6s ease-in-out var(--bounce-delay, 0s) infinite;
+    }
+
+    /* Right-side bot mirrored to face the centre one */
+    .complete-bot.flipped {
+      transform: scaleX(-1);
     }
 
     .complete-confetti {
@@ -4023,7 +4029,7 @@
       position: absolute;
       left: 50%;
       bottom: -2px;
-      width: 150px;
+      width: var(--shadow-w, 150px);
       height: 18px;
       border-radius: 50%;
       transform: translateX(-50%);
@@ -4399,8 +4405,16 @@
         <span style="--x:62%;--y:63%;--c:#68c7ff;--r:48deg;--d:1.1s"></span>
       </div>
       <div class="complete-bots" aria-hidden="true">
+        <div class="complete-bot" style="--shadow-w:120px">
+          <img class="complete-bot-img" style="--bot-w:150px;--bounce-delay:-.5s" src="assets/happyPinkBot.webp" alt="">
+          <div class="complete-ground-shadow"></div>
+        </div>
         <div class="complete-bot">
           <img class="complete-bot-img" style="--bot-w:190px" src="assets/happyPinkBot.webp" alt="">
+          <div class="complete-ground-shadow"></div>
+        </div>
+        <div class="complete-bot flipped" style="--shadow-w:120px">
+          <img class="complete-bot-img" style="--bot-w:150px;--bounce-delay:-1.1s" src="assets/happyPinkBot.webp" alt="">
           <div class="complete-ground-shadow"></div>
         </div>
       </div>
